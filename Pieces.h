@@ -30,7 +30,7 @@
 #include "Piece.h"
 using namespace std;
 
- class Pieces 
+class Pieces 
 {
 
 public:

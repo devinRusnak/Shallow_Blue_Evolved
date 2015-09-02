@@ -13,6 +13,8 @@ Move::Move()
   dest[0] = -1;
   dest[1] = -1;
   player = -1;
+  file_ambig = -1;
+  promotion = -1;
 }
 
 /**
@@ -23,6 +25,10 @@ Move::Move(Piece_enum p, char rank, int file, int playr)
   piece = p;
   dest[1] = file;
   player = playr;
+  file_ambig = -1;
+  promotion = -1;
+
+
   switch(rank)
   {
      case 'a': dest[0] = 0; break;
@@ -88,9 +94,30 @@ void Move::setFile(char c)
     default: 
 		cout << "error: file set" << endl; 
 		dest[0] = -1;
-		break;
   }
   validityCheck();
+}
+
+/**
+ *
+ */
+void Move::setFileAmbig(char c)
+{
+ switch(c)
+ {
+    case 'a': file_ambig = 0; break;
+    case 'b': file_ambig = 1; break;
+    case 'c': file_ambig = 2; break;
+    case 'd': file_ambig = 3; break;
+    case 'e': file_ambig = 4; break;
+    case 'f': file_ambig = 5; break;
+    case 'g': file_ambig = 6; break;
+    case 'h': file_ambig = 7; break;
+    case '#': file_ambig = -1; break;
+    default:
+		cout << "error: file_ambig set" << endl;
+                file_ambig = -1;
+ }
 }
 
 /**
@@ -114,7 +141,7 @@ void Move::setCapture(int c)
  */
 void Move::setCastle(int c)
 {
-  castle = 1;
+  castle = c;
 }
 
 /**
@@ -146,7 +173,18 @@ void Move::setCheck(int c)
  */
 void Move::setSpecify(int s)
 {
-  specify = s;
+	cout << s << endl;
+  switch(s)
+  {
+     case 81: specify = 4; break;
+     case 66: specify = 3; break;
+     case 82: specify = 2; break;
+     case 78: specify = 1; break;
+     case  0: specify = 0; break;
+     default:
+		cout << "error: invalid promotion specify" << endl;
+		specify = -1;
+  }
 }
 
 /**
@@ -171,6 +209,14 @@ int Move::getRank()
 int Move::getFile()
 {
   return dest[0];
+}
+
+/**
+ *
+ */
+int Move::getFileAmbig()
+{
+  return file_ambig;
 }
 
 /**

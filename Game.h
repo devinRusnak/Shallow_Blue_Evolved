@@ -29,6 +29,7 @@ public:
    bool isActive();
    int validate(char*);			// input
    void printBoard();
+   void printLogicalBoard();
    void recordMove(int, char*);		// turn, input
    void kingCheck(int);			// turn
    

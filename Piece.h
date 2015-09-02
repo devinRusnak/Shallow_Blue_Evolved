@@ -25,12 +25,14 @@ public:
    void setMoved(bool);
    int getID();
    int* getPos();
+   int getPawnFlag();
    bool isAlive();
    bool isMoved();
 
 private:
    int piece_id;
    int position[2];
+   int pawn_flag;
    bool has_moved;
    bool is_alive;
 

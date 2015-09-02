@@ -106,11 +106,17 @@ int Game::validate(char *c)
 
    pos[0] = translated_move->getFile();			// destination X (file)
    pos[1] = itoiLogical(translated_move->getRank());	// destination Y (rank)
+   if( pos[0] < 0 || pos[0] > 7 || pos[1] < 0 || pos[1] > 7 )
+   {
+	cout << "error: out of bounds" << endl;
+	return 0;
+   }
 
    if(debug)
       cout << "\n" << translated_move->getPiece() << " " << translated_move->getRank()
            << " " << translated_move->getFile() << " " << translated_move->getPlayer() 
-	   << " " << pos[0] << " " << pos[1] << endl; 
+	   << " " << pos[0] << " " << pos[1] << " " << translated_move->getPromotion() 
+	   << " " << translated_move->getSpecify() << " " << translated_move->getCastle() << endl; 
 
    /* Check for quit flag */
    if(translated_move != NULL && 
@@ -124,70 +130,79 @@ int Game::validate(char *c)
     *  Pawn  *
     **********/
    if(translated_move->getPiece() == Pawn)
-   {  
-     /**
-      *  Double First Move
-      */
-      if(translated_move->getPlayer() == 0)	/* White's turn */
-      {
-         if(pos[1]+2 == 6 &&
-            game_board[pos[0]][pos[1]] == -1 &&		// TODO Can they hop first move??? TODO
-            game_board[pos[0]][pos[1]+1] == -1 &&
-            game_board[pos[0]][pos[1]+2] < 24 &&
-            game_board[pos[0]][pos[1]+2] > 15)
-         {
-            /* valid pawn move */
-	    boardSwap(0,pos[0],pos[1]+2,pos[0],pos[1]);	// update board
-            turn++;					// increment turn
-            return 1;					// return valid
-         }
-      }
-      else					/* Black's turn */
-      {
-         if(pos[1]-2 == 1 &&
-            game_board[pos[0]][pos[1]] == -1 &&
-            game_board[pos[0]][pos[1]-1] == -1 &&
-            game_board[pos[0]][pos[1]-2] < 8 &&
-            game_board[pos[0]][pos[1]-2] >= 0)
-         {
-	    /* valid pawn move */
-	    boardSwap(0,pos[0],pos[1]-2,pos[0],pos[1]);	// update board
-            turn++;					// increment turn
-            return 1;					// return valid
-         }
-      } /* end double move */
+   {
+  
+     /* move check */
+     if(translated_move->getCapture() == 0 && translated_move->getPromotion() == 0 &&
+        translated_move->getEnPass() == 0)
+     {
+       /**
+        *  Double First Move
+        */
+        if(translated_move->getPlayer() == 0)		/* White's turn */
+        {
+           if(pos[1]+2 == 6 &&
+              game_board[pos[0]][pos[1]] == -1 &&		// TODO Can they hop first move??? TODO
+              game_board[pos[0]][pos[1]+1] == -1 &&
+              game_board[pos[0]][pos[1]+2] < 24 &&
+              game_board[pos[0]][pos[1]+2] > 15 &&
+              moveSafe(0,pos[0],pos[1]+2,pos[0],pos[1]) == 0)
+           {
+              /* valid pawn move */
+	      boardSwap(0,pos[0],pos[1]+2,pos[0],pos[1]);	// update board
+              turn++;					// increment turn
+              return 1;					// return valid
+           }
+        }
+        else					/* Black's turn */
+        {
+           if(pos[1]-2 == 1 &&
+              game_board[pos[0]][pos[1]] == -1 &&
+              game_board[pos[0]][pos[1]-1] == -1 &&
+              game_board[pos[0]][pos[1]-2] < 8 &&
+              game_board[pos[0]][pos[1]-2] >= 0 &&
+       	      moveSafe(1,pos[0],pos[1]-2,pos[0],pos[1]) == 0)
+           {
+	      /* valid pawn move */
+	      boardSwap(0,pos[0],pos[1]-2,pos[0],pos[1]);	// update board
+              turn++;					// increment turn
+              return 1;					// return valid
+           }
+        } /* end double move */
 
-     /**
-      *  Simple Move
-      */
-      if(translated_move->getPlayer() == 0)	/* White's turn */
-      {
-         if(game_board[pos[0]][pos[1]] == -1 &&
-            game_board[pos[0]][pos[1]+1] < 24 && 
-            game_board[pos[0]][pos[1]+1] > 15)
-         {
-            /* valid pawn move */
-	    boardSwap(0,pos[0],pos[1]+1,pos[0],pos[1]);	// update board
-            turn++;					// increment turn
-            return 1;					// return valid
-         }  
+       /**
+        *  Simple Move
+        */
+        if(translated_move->getPlayer() == 0)	/* White's turn */
+        {
+           if(game_board[pos[0]][pos[1]] == -1 &&
+              game_board[pos[0]][pos[1]+1] < 24 && 
+              game_board[pos[0]][pos[1]+1] > 15 &&
+              moveSafe(0,pos[0],pos[1]+1,pos[0],pos[1]) == 0)
+           {
+              /* valid pawn move */
+	      boardSwap(0,pos[0],pos[1]+1,pos[0],pos[1]);	// update board
+              turn++;					// increment turn
+              return 1;					// return valid
+           }  
+        }
+        else					/* Black's Turn */
+        {
+           if(game_board[pos[0]][pos[1]] == -1 &&
+              game_board[pos[0]][pos[1]-1] < 8 &&
+              game_board[pos[0]][pos[1]-1] >= 0 &&
+              moveSafe(1,pos[0],pos[1]-1,pos[0],pos[1]) == 0)
+           {
+              /* valid pawn move */
+              boardSwap(0,pos[0],pos[1]-1,pos[0],pos[1]);	// update board
+              turn++;						// increment turn
+              return 1;						// return valid
+           }
+        } /* end simple move */
       }
-      else					/* Black's Turn */
-      {
-         if(game_board[pos[0]][pos[1]] == -1 &&
-            game_board[pos[0]][pos[1]-1] < 8 &&
-            game_board[pos[0]][pos[1]-1] >= 0)
-         {
-            /* valid pawn move */
-            boardSwap(0,pos[0],pos[1]-1,pos[0],pos[1]);	// update board
-            turn++;					// increment turn
-            return 1;					// return valid
-         }
-      } /* end simple move */
-
-     /**
-      *  Attack Move
-      */
+     /*****************
+      *  Attack Move  *
+      *****************/
       if(translated_move->getCapture() == 1 && game_board[pos[0]][pos[1]] != -1)
       {
 	 if(translated_move->getPlayer() == 0)	/* White's Turn */
@@ -196,20 +211,42 @@ int Game::validate(char *c)
 	    if(game_board[pos[0]][pos[1]] < 16)	
 	    {
 		// Ambiguity check
-		if( (game_board[pos[0]-1][pos[1]+1] > 15 && game_board[pos[0]-1][pos[1]+1] < 24) && 
-		    (game_board[pos[0]+1][pos[1]+1] > 15 && game_board[pos[0]+1][pos[1]+1] < 24) )
+		if( (pos[0]-1 >= 0 && pos[1]+1 < 8 && 
+		     game_board[pos[0]-1][pos[1]+1] > 15 && game_board[pos[0]-1][pos[1]+1] < 24) && 
+		    (pos[0]+1 < 8 && pos[1]+1 < 8 && 
+		     game_board[pos[0]+1][pos[1]+1] > 15 && game_board[pos[0]+1][pos[1]+1] < 24) )
 		{
-		    cout << "error: ambiguous move, specify file and/or rank.\n" << endl;
-		    return 0;
+                    if(translated_move->getFileAmbig() == -1)
+		    {
+		       cout << "error: ambiguous move, specify file and/or rank.\n" << endl;
+		       return 0;
+		    }
+		    /* valid specification */
+		    if(moveSafe(0,translated_move->getFileAmbig(),pos[1]+1,pos[0],pos[1]) == 0)
+		    {
+		    	boardSwap(1,translated_move->getFileAmbig(),pos[1]+1,pos[0],pos[1]);		// update board
+		    	translated_move->setFileAmbig('#');						// reset file_ambig
+		    	turn++;										// increment turn
+		    	return 1;									// return valid
+		    }
+		    else
+		    {
+			cout << "error: move would place your king into check" << endl;
+			return 0;
+		    }
 		}
-		else if( game_board[pos[0]-1][pos[1]+1] > 15 && game_board[pos[0]-1][pos[1]+1] < 24 )
+		else if( pos[0]-1 >= 0 && pos[1]+1 < 8 && 
+		         game_board[pos[0]-1][pos[1]+1] > 15 && game_board[pos[0]-1][pos[1]+1] < 24 &&
+                         moveSafe(0,pos[0]-1,pos[1]+1,pos[0],pos[1]) == 0 )
 		{
                    /* valid pawn capture */
 		   boardSwap(1,pos[0]-1,pos[1]+1,pos[0],pos[1]);	// update board
 		   turn++;						// increment turn
 		   return 1;						// return valid
 		}
-		else if( game_board[pos[0]+1][pos[1]+1] > 15 && game_board[pos[0]+1][pos[1]+1] < 24 )
+		else if( pos[0]+1 < 8 && pos[1]+1 < 8 && 
+			 game_board[pos[0]+1][pos[1]+1] > 15 && game_board[pos[0]+1][pos[1]+1] < 24 &&
+                         moveSafe(0,pos[0]+1,pos[1]+1,pos[0],pos[1]) == 0 )
  		{
                    /* valid pawn capture */
 		   boardSwap(1,pos[0]+1,pos[1]+1,pos[0],pos[1]);	// update board
@@ -224,20 +261,42 @@ int Game::validate(char *c)
   	    if(game_board[pos[0]][pos[1]] > 15)
 	    {
 	    	// Ambiguity check
-                if( (game_board[pos[0]-1][pos[1]-1] >= 0 && game_board[pos[0]-1][pos[1]-1] < 8) &&
-                    (game_board[pos[0]+1][pos[1]-1] >= 0 && game_board[pos[0]+1][pos[1]-1] < 8) )
+                if( (pos[0]-1 >= 0 && pos[1]-1 >= 0 &&
+		     game_board[pos[0]-1][pos[1]-1] >= 0 && game_board[pos[0]-1][pos[1]-1] < 8) &&
+                    (pos[0]+1 < 8 && pos[1]-1 >= 0 &&
+		     game_board[pos[0]+1][pos[1]-1] >= 0 && game_board[pos[0]+1][pos[1]-1] < 8) )
                 {
-                    cout << "error: ambiguous move, specify file and/or rank.\n" << endl;
-                    return 0;
+		    if(translated_move->getFileAmbig() == -1)
+		    {
+                       cout << "error: ambiguous move, specify file and/or rank.\n" << endl;
+                       return 0;
+		    }
+		    /* valid specification */
+		    if(moveSafe(1,translated_move->getFileAmbig(),pos[1]-1,pos[0],pos[1]) == 0)
+		    {
+		    	boardSwap(1,translated_move->getFileAmbig(),pos[1]-1,pos[0],pos[1]);		// update board
+		    	translated_move->setFileAmbig('#');						// reset file_ambig
+		    	turn++;										// increment turn
+		    	return 1;									// return valid
+		    }
+		    else
+		    {
+			cout << "error: move would place your king into check" << endl;
+			return 0;
+		    }
                 }
-                else if( game_board[pos[0]-1][pos[1]-1] >= 0 && game_board[pos[0]-1][pos[1]-1] < 8 )
+                else if( pos[0]-1 >= 0 && pos[1]-1 >= 0 &&
+			 game_board[pos[0]-1][pos[1]-1] >= 0 && game_board[pos[0]-1][pos[1]-1] < 8 &&
+                         moveSafe(1,pos[0]-1,pos[1]-1,pos[0],pos[1]) == 0 )
                 {
                    /* valid pawn capture */
                    boardSwap(1,pos[0]-1,pos[1]-1,pos[0],pos[1]);	// update board
                    turn++;						// increment turn
                    return 1;						// return valid
                 }
-                else if( game_board[pos[0]+1][pos[1]-1] >= 0 && game_board[pos[0]+1][pos[1]-1] < 8 )
+                else if( pos[0]+1 < 8 && pos[1]-1 >= 0 && 
+			 game_board[pos[0]+1][pos[1]-1] >= 0 && game_board[pos[0]+1][pos[1]-1] < 8 &&
+                         moveSafe(1,pos[0]+1,pos[1]-1,pos[0],pos[1]) == 0 )
                 {
                    /* valid pawn capture */
                    boardSwap(1,pos[0]+1,pos[1]-1,pos[0],pos[1]);	// update board
@@ -248,14 +307,437 @@ int Game::validate(char *c)
 	 }
       } /* end attack */
 
-     /**
-      *  Pawn En Passant
-      */
-      if(translated_move->getCapture() == 1 )
+     /*********************
+      *  Pawn En Passant  *
+      *********************/
+      if(translated_move->getEnPass() == 1)
       {
-     		// TODO TODO TODO
+        if(translated_move->getPlayer() == 0)	/* white's turn */
+	{
+	  /* valid en passant check */
+	  if((translated_move->getFileAmbig() == pos[0]+1 ||
+              translated_move->getFileAmbig() == pos[0]-1) &&
+    	      game_board[pos[0]][pos[1]] == -1 &&
+              the_pieces.getPiece(game_board[pos[0]][pos[1]+1])->getPawnFlag() == 1)
+          {
+          	the_pieces.getPiece(game_board[translated_move->getFileAmbig()][pos[1]+1])->setPos(pos[0],pos[1]);	// set piece's new pos
+	        the_pieces.getPiece(game_board[pos[0]][pos[1]+1])->setPos(-1,-1);					// set captured piece pos
+      		the_pieces.getPiece(game_board[pos[0]][pos[1]+1])->setAlive(false);					// set captured dead
+		game_board[pos[0]][pos[1]] = game_board[translated_move->getFileAmbig()][pos[1]+1];			// update board 
+		game_board[translated_move->getFileAmbig()][pos[1]+1] = -1;
+		game_board[pos[0]][pos[1]+1] = -1;	
+		return 1;
+          }
+	  else
+	  {
+		cout << "error: invalid pawn en passant capture" << endl;
+		return 0;
+	  }
+  
+	}
+	else					/* black's turn */
+	{
+	  /* valid en assant check */
+	  if((translated_move->getFileAmbig() == pos[0]+1 ||
+              translated_move->getFileAmbig() == pos[0]-1) &&
+	      game_board[pos[0]][pos[1]] == -1 &&
+	      the_pieces.getPiece(game_board[pos[0]][pos[1]-1])->getPawnFlag() == 1)
+          {
+            	the_pieces.getPiece(game_board[translated_move->getFileAmbig()][pos[1]-1])->setPos(pos[0],pos[1]);      // set piece's new pos
+                the_pieces.getPiece(game_board[pos[0]][pos[1]-1])->setPos(-1,-1);                                       // set captured piece pos
+                the_pieces.getPiece(game_board[pos[0]][pos[1]-1])->setAlive(false);                                     // set captured dead
+                game_board[pos[0]][pos[1]] = game_board[translated_move->getFileAmbig()][pos[1]-1];                     // update board 
+                game_board[translated_move->getFileAmbig()][pos[1]-1] = -1;
+                game_board[pos[0]][pos[1]-1] = -1;
+                return 1; 
+          }
+	  else
+	  {
+		cout << "error: invalid pawn en passant capture" << endl;
+		return 0;
+	  } 
+	}
       } /* end en passant */ 
 
+      /***************
+       *  Promotion  *
+       ***************/
+      else if(translated_move->getPromotion() == 1)
+      {
+	cout << "PROMOTE THAT SHIT" << endl;
+	if(translated_move->getPlayer() == 0)		/* white's turn */
+ 	{
+	   /* not in correct row or spot is not empty */
+	   if(pos[1] != 0 || game_board[pos[0]][0] != -1)
+	   {
+		cout << "error: invalid promotion" << endl;
+		return 0;
+	   }
+	   switch(translated_move->getSpecify())	// switch of promotion choices
+	   {
+		case 4:		/***********
+    				 *  Queen  *
+				 ***********/
+				if(debug)
+				   cout << "debug: queen promotion" << endl;
+
+				/* queen is is alive */
+				if(the_pieces.getPiece(30)->isAlive() == true)
+				{
+				   cout << "error: promotion piece alive" << endl;
+				   return 0;
+				}
+				/* check pawn is in correct location */
+				if(game_board[pos[0]][1] > 15 &&
+				   game_board[pos[0]][1] < 24)
+				{
+				   the_pieces.getPiece(30)->setPos(pos[0],0);			// resurrect queen
+				   the_pieces.getPiece(30)->setAlive(true);			
+				   the_pieces.getPiece(game_board[pos[0]][1])->setPos(-1,-1);	// remove pawn
+				   the_pieces.getPiece(game_board[pos[0]][1])->setAlive(false);	// set dead
+				   game_board[pos[0]][1] = -1;					// update board
+				   game_board[pos[0]][0] = 30;
+				   turn++;							// increment turn
+				   return 1;							// return valid
+				}
+				else
+				   cout << "error: invalid promotion" << endl;
+				break;
+
+		case 3:		/************
+ 				 *  Bishop  *
+				 ************/
+				if(debug)
+				   cout << "debug: bishop promotion" << endl;
+
+				if(pos[0]%2 == 0)	/* white-square bishop */
+				{
+					/* bishop is still alive */
+					if(the_pieces.getPiece(29)->isAlive() == true)
+					{
+					   cout << "error: promotion piece alive" << endl;
+					   return 0;
+					}
+					/* check pawn is in correct location */
+					if(game_board[pos[0]][1] > 15 &&
+					   game_board[pos[0]][1] < 24) 
+					{
+					   the_pieces.getPiece(29)->setPos(pos[0],0);                   // resurrect bishop
+                                  	   the_pieces.getPiece(29)->setAlive(true);
+                                   	   the_pieces.getPiece(game_board[pos[0]][1])->setPos(-1,-1);   // remove pawn
+                                   	   the_pieces.getPiece(game_board[pos[0]][1])->setAlive(false); // set dead
+                                   	   game_board[pos[0]][1] = -1;                                  // update board
+                                   	   game_board[pos[0]][0] = 29;
+                                   	   turn++;                                                      // increment turn
+                                   	   return 1;							// return valid
+					}
+					else
+					   cout << "error: invalid promotion" << endl;
+				}
+				else			/* black-square bishop */
+				{
+					/* bishop is still alive */
+                                        if(the_pieces.getPiece(28)->isAlive() == true)
+                                        {
+                                           cout << "error: promotion piece alive" << endl;
+                                           return 0;
+                                        }
+                                        /* check pawn is in correct location */
+                                        if(game_board[pos[0]][1] > 15 &&
+                                           game_board[pos[0]][1] < 24)
+                                        {
+                                           the_pieces.getPiece(28)->setPos(pos[0],0);                   // resurrect bishop
+                                           the_pieces.getPiece(28)->setAlive(true);
+                                           the_pieces.getPiece(game_board[pos[0]][1])->setPos(-1,-1);   // remove pawn
+                                           the_pieces.getPiece(game_board[pos[0]][1])->setAlive(false); // set dead
+                                           game_board[pos[0]][1] = -1;                                  // update board
+                                           game_board[pos[0]][0] = 28;
+                                           turn++;                                                      // increment turn
+                                           return 1;                                                    // return valid
+                                        }
+                                        else
+                                           cout << "error: invalid promotion" << endl;
+				}
+				break;
+
+		case 2:		/**********
+				 *  Rook  *
+				 **********/
+				if(debug)
+				   cout << "debug: rook promotion" << endl;
+
+				/* rooks are still alive */
+				if(the_pieces.getPiece(24)->isAlive() == true && 
+				   the_pieces.getPiece(25)->isAlive() == true)
+				{
+				   cout << "error: promotion piece both alive" << endl;
+				   return 0;
+				}				
+				/* check pawn is in correct location */
+				if(game_board[pos[0]][1] > 15 &&
+				   game_board[pos[0]][1] < 24)
+				{
+				   if(the_pieces.getPiece(24)->isAlive() == false)
+				   {
+				   	the_pieces.getPiece(24)->setPos(pos[0],0);                   // resurrect rook
+                                        the_pieces.getPiece(24)->setAlive(true);
+                                        the_pieces.getPiece(game_board[pos[0]][1])->setPos(-1,-1);   // remove pawn
+                                        the_pieces.getPiece(game_board[pos[0]][1])->setAlive(false); // set dead
+                                        game_board[pos[0]][1] = -1;                                  // update board
+                                        game_board[pos[0]][0] = 24;
+                                        turn++;                                                      // increment turn
+                                        return 1;                                                    // return valid
+				   }
+				   else
+				   {
+					the_pieces.getPiece(25)->setPos(pos[0],0);                   // resurrect rook
+                                        the_pieces.getPiece(25)->setAlive(true);
+                                        the_pieces.getPiece(game_board[pos[0]][1])->setPos(-1,-1);   // remove pawn
+                                        the_pieces.getPiece(game_board[pos[0]][1])->setAlive(false); // set dead
+                                        game_board[pos[0]][1] = -1;                                  // update board
+                                        game_board[pos[0]][0] = 25;
+                                        turn++;                                                      // increment turn
+                                        return 1;                                                    // return valid
+				   }
+				}
+				else
+				   cout << "error: invalid promotion" << endl;
+				break;
+
+		case 1:		/************
+				 *  Knight  *
+				 ************/  
+				if(debug)
+				   cout << "debug: knight promotion" << endl;
+
+				/* both knights are still alive */
+				if(the_pieces.getPiece(26)->isAlive() == true &&
+				   the_pieces.getPiece(27)->isAlive() == true)
+				{
+				   cout << "error: promotion piece both alive" << endl;
+				   return 0;
+				}
+			 	/* check pawn is in correct location */
+				if(game_board[pos[0]][1] > 15 &&
+				   game_board[pos[0]][1] < 24)
+				{
+				   if(the_pieces.getPiece(26)->isAlive() == false)
+                                   {
+                                        the_pieces.getPiece(26)->setPos(pos[0],0);                   // resurrect knight
+                                        the_pieces.getPiece(26)->setAlive(true);
+                                        the_pieces.getPiece(game_board[pos[0]][1])->setPos(-1,-1);   // remove pawn
+                                        the_pieces.getPiece(game_board[pos[0]][1])->setAlive(false); // set dead
+                                        game_board[pos[0]][1] = -1;                                  // update board
+                                        game_board[pos[0]][0] = 26;
+                                        turn++;                                                      // increment turn
+                                        return 1;                                                    // return valid
+                                   }
+                                   else
+                                   {
+                                        the_pieces.getPiece(27)->setPos(pos[0],0);                   // resurrect knight
+                                        the_pieces.getPiece(27)->setAlive(true);
+                                        the_pieces.getPiece(game_board[pos[0]][1])->setPos(-1,-1);   // remove pawn
+                                        the_pieces.getPiece(game_board[pos[0]][1])->setAlive(false); // set dead
+                                        game_board[pos[0]][1] = -1;                                  // update board
+                                        game_board[pos[0]][0] = 27;
+                                        turn++;                                                      // increment turn
+                                        return 1;                                                    // return valid
+                                   }
+				}
+				else
+				   cout << "error: invalid promotion" << endl;
+				break;
+
+		default: cout << "error: bad spec" << endl;
+           } // end switch
+	}
+	else						/* black's turn */
+	{
+           /* not in correct row or spot is not empty */
+           if(pos[1] != 7 || game_board[pos[0]][7] != -1)
+           {
+                cout << "error: invalid promotion" << endl;
+                return 0;
+           }
+           switch(translated_move->getSpecify())        // switch of promotion choices
+           {
+	   	case 4:         /***********
+                                 *  Queen  *
+                                 ***********/
+                                if(debug)
+                                   cout << "debug: queen promotion" << endl;
+
+                                /* queen is is alive */
+                                if(the_pieces.getPiece(14)->isAlive() == true)
+                                {
+                                   cout << "error: promotion piece alive" << endl;
+                                   return 0;
+                                }
+                                /* check pawn is in correct location */
+                                if(game_board[pos[0]][7] >= 0 &&
+                                   game_board[pos[0]][7] < 8)
+                                {
+                                   the_pieces.getPiece(14)->setPos(pos[0],7);                   // resurrect queen
+                                   the_pieces.getPiece(14)->setAlive(true);
+                                   the_pieces.getPiece(game_board[pos[0]][6])->setPos(-1,-1);   // remove pawn
+                                   the_pieces.getPiece(game_board[pos[0]][6])->setAlive(false); // set dead
+                                   game_board[pos[0]][6] = -1;                                  // update board
+                                   game_board[pos[0]][7] = 14;
+                                   turn++;                                                      // increment turn
+                                   return 1;                                                    // return valid
+                                }
+                                else
+                                   cout << "error: invalid promotion" << endl;
+                                break;
+
+		case 3:         /************
+                                 *  Bishop  *
+                                 ************/
+                                if(debug)
+                                   cout << "debug: bishop promotion" << endl;
+
+                                if(pos[0]%2 == 0)       /* white-square bishop */
+                                {
+                                        /* bishop is still alive */
+                                        if(the_pieces.getPiece(12)->isAlive() == true)
+                                        {
+                                           cout << "error: promotion piece alive" << endl;
+                                           return 0;
+                                        }
+                                        /* check pawn is in correct location */
+                                        if(game_board[pos[0]][7] >= 0 &&
+                                           game_board[pos[0]][7] < 8)
+                                        {
+                                           the_pieces.getPiece(12)->setPos(pos[0],7);                   // resurrect bishop
+                                           the_pieces.getPiece(12)->setAlive(true);
+                                           the_pieces.getPiece(game_board[pos[0]][6])->setPos(-1,-1);   // remove pawn
+                                           the_pieces.getPiece(game_board[pos[0]][6])->setAlive(false); // set dead
+                                           game_board[pos[0]][6] = -1;                                  // update board
+                                           game_board[pos[0]][7] = 12;
+                                           turn++;                                                      // increment turn
+                                           return 1;                                                    // return valid
+                                        }
+                                        else
+                                           cout << "error: invalid promotion" << endl;
+                                }
+                                else                    /* black-square bishop */
+                                {
+                                        /* bishop is still alive */
+                                        if(the_pieces.getPiece(13)->isAlive() == true)
+                                        {
+                                           cout << "error: promotion piece alive" << endl;
+                                           return 0;
+                                        }
+                                        /* check pawn is in correct location */
+                                        if(game_board[pos[0]][7] >= 0 &&
+                                           game_board[pos[0]][7] < 8)
+                                        {
+                                           the_pieces.getPiece(13)->setPos(pos[0],7);                   // resurrect bishop
+                                           the_pieces.getPiece(13)->setAlive(true);
+                                           the_pieces.getPiece(game_board[pos[0]][6])->setPos(-1,-1);   // remove pawn
+                                           the_pieces.getPiece(game_board[pos[0]][6])->setAlive(false); // set dead
+                                           game_board[pos[0]][6] = -1;                                  // update board
+                                           game_board[pos[0]][7] = 13;
+                                           turn++;                                                      // increment turn
+                                           return 1;                                                    // return valid
+                                        }
+                                        else
+                                           cout << "error: invalid promotion" << endl;
+                                }
+                                break;
+
+		case 2:         /**********
+                                 *  Rook  *
+                                 **********/
+                                if(debug)
+                                   cout << "debug: rook promotion" << endl;
+
+                                /* rooks are still alive */
+                                if(the_pieces.getPiece(8)->isAlive() == true &&
+                                   the_pieces.getPiece(9)->isAlive() == true)
+                                {
+                                   cout << "error: promotion piece both alive" << endl;
+                                   return 0;
+                                }
+                                /* check pawn is in correct location */
+                                if(game_board[pos[0]][6] >= 0 &&
+                                   game_board[pos[0]][6] < 8)
+                                {
+                                   if(the_pieces.getPiece(8)->isAlive() == false)
+                                   {
+                                        the_pieces.getPiece(8)->setPos(pos[0],7);                   // resurrect rook
+                                        the_pieces.getPiece(8)->setAlive(true);
+                                        the_pieces.getPiece(game_board[pos[0]][6])->setPos(-1,-1);   // remove pawn
+                                        the_pieces.getPiece(game_board[pos[0]][6])->setAlive(false); // set dead
+                                        game_board[pos[0]][6] = -1;                                  // update board
+                                        game_board[pos[0]][7] = 8;
+                                        turn++;                                                      // increment turn
+                                        return 1;                                                    // return valid
+                                   }
+                                   else
+                                   {
+                                        the_pieces.getPiece(9)->setPos(pos[0],7);                   // resurrect rook
+                                        the_pieces.getPiece(9)->setAlive(true);
+                                        the_pieces.getPiece(game_board[pos[0]][6])->setPos(-1,-1);   // remove pawn
+                                        the_pieces.getPiece(game_board[pos[0]][6])->setAlive(false); // set dead
+                                        game_board[pos[0]][6] = -1;                                  // update board
+                                        game_board[pos[0]][7] = 9;
+                                        turn++;                                                      // increment turn
+                                        return 1;                                                    // return valid
+                                   }
+                                }
+                                else
+                                   cout << "error: invalid promotion" << endl;
+                                break;
+
+		case 1:         /************
+                                 *  Knight  *
+                                 ************/
+                                if(debug)
+                                   cout << "debug: knight promotion" << endl;
+
+                                /* both knights are still alive */
+                                if(the_pieces.getPiece(10)->isAlive() == true &&
+                                   the_pieces.getPiece(11)->isAlive() == true)
+                                {
+                                   cout << "error: promotion piece both alive" << endl;
+                                   return 0;
+                                }
+                                /* check pawn is in correct location */
+                                if(game_board[pos[0]][6] >= 0 &&
+                                   game_board[pos[0]][6] < 8)
+                                {
+                                   if(the_pieces.getPiece(10)->isAlive() == false)
+                                   {
+                                        the_pieces.getPiece(10)->setPos(pos[0],7);                   // resurrect knight
+                                        the_pieces.getPiece(10)->setAlive(true);
+                                        the_pieces.getPiece(game_board[pos[0]][6])->setPos(-1,-1);   // remove pawn
+                                        the_pieces.getPiece(game_board[pos[0]][6])->setAlive(false); // set dead
+                                        game_board[pos[0]][6] = -1;                                  // update board
+                                        game_board[pos[0]][7] = 10;
+                                        turn++;                                                      // increment turn
+                                        return 1;                                                    // return valid
+                                   }
+                                   else
+                                   {
+                                        the_pieces.getPiece(11)->setPos(pos[0],7);                   // resurrect knight
+                                        the_pieces.getPiece(11)->setAlive(true);
+                                        the_pieces.getPiece(game_board[pos[0]][6])->setPos(-1,-1);   // remove pawn
+                                        the_pieces.getPiece(game_board[pos[0]][6])->setAlive(false); // set dead
+                                        game_board[pos[0]][6] = -1;                                  // update board
+                                        game_board[pos[0]][7] = 11;
+                                        turn++;                                                      // increment turn
+                                        return 1;                                                    // return valid
+                                   }
+                                }
+                                else
+                                   cout << "error: invalid promotion" << endl;
+                                break;
+
+                default: cout << "error: bad spec" << endl;
+	   } // end switch
+	}
+      } // end promotion 
    } /* end pawn */
    
   /************
@@ -343,10 +825,14 @@ int Game::validate(char *c)
 	   if( ambiguous == 1)
 	   {
               /* found a single knight that can move to destination */
-	      if(game_board[pos[0]][pos[1]] == -1)
+	      if(translated_move->getCapture() == 0 && game_board[pos[0]][pos[1]] == -1 && 
+		 moveSafe(0,x,y,pos[0],pos[1]) == 0) 
                  boardSwap(0,x,y,pos[0],pos[1]);	// a move 
-	      else if(translated_move->getCapture() == 1 && game_board[pos[0]][pos[1]] < 16)
+
+	      else if(translated_move->getCapture() == 1 && game_board[pos[0]][pos[1]] < 16 &&
+                      moveSafe(0,x,y,pos[0],pos[1]) == 0)
                  boardSwap(1,x,y,pos[0],pos[1]);	// or a capture 
+
               turn++;					// increment turn
               return 1;					// return valid
 	   }
@@ -438,10 +924,14 @@ int Game::validate(char *c)
            if( ambiguous == 1)
            {
 	      /* found a single knight that can move to destination */
-              if(game_board[pos[0]][pos[1]] == -1)
+              if(translated_move->getCapture() == 0 && game_board[pos[0]][pos[1]] == -1 && 
+		 moveSafe(1,x,y,pos[0],pos[1]) == 0)
                  boardSwap(0,x,y,pos[0],pos[1]);        // a move
-              else if(translated_move->getCapture() == 1 && game_board[pos[0]][pos[1]] > 15)         
+
+              else if(translated_move->getCapture() == 1 && game_board[pos[0]][pos[1]] > 15 &&
+                      moveSafe(1,x,y,pos[0],pos[1]) == 0)         
                  boardSwap(1,x,y,pos[0],pos[1]);        // a capture  
+
               turn++;					// increment turn
               return 1;					// return valid
            }
@@ -465,14 +955,16 @@ int Game::validate(char *c)
        /* check for ambiguous move */
        if(cardinalSearch(Rook, 0, pos[0], pos[1]) == 1)
        {
-         if(game_board[pos[0]][pos[1]] == -1)
+         if(translated_move->getCapture() == 0 && game_board[pos[0]][pos[1]] == -1 && 
+     	    moveSafe(0,cords[0],cords[1],pos[0],pos[1]) == 0)
          {
 		/* valid rook move */
          	boardSwap(0, cords[0], cords[1], pos[0], pos[1]);	// update board
                 turn++;							// increment turn
                 return 1;						// return valid
          }
-         else if(translated_move->getCapture() == 1 && game_board[pos[0]][pos[1]] < 16)
+         else if(translated_move->getCapture() == 1 && game_board[pos[0]][pos[1]] < 16 &&
+                 moveSafe(0,cords[0],cords[1],pos[0],pos[1]) == 0)
          {
 		/* valid rook capture */
          	boardSwap(1, cords[0], cords[1], pos[0], pos[1]);	// update board
@@ -487,14 +979,16 @@ int Game::validate(char *c)
        /* check for ambiguous move */
        if(cardinalSearch(Rook, 1, pos[0], pos[1]) == 1)
        {
-         if(game_board[pos[0]][pos[1]] == -1)
+         if(translated_move->getCapture() == 0 && game_board[pos[0]][pos[1]] == -1 && 
+	    moveSafe(1,cords[0],cords[1],pos[0],pos[1]) == 0)
          {
 		/* valid rook move */
                 boardSwap(0, cords[0], cords[1], pos[0], pos[1]);	// update board
    		turn++;							// increment turn
 		return 1;						// return valid
          }
-         else if(translated_move->getCapture() == 1 && game_board[pos[0]][pos[1]] > 15)
+         else if(translated_move->getCapture() == 1 && game_board[pos[0]][pos[1]] > 15 &&
+                 moveSafe(1,cords[0],cords[1],pos[0],pos[1]) == 0)
          {
 		/* valid rook capture */
                 boardSwap(1, cords[0], cords[1], pos[0], pos[1]);	// update board
@@ -516,14 +1010,16 @@ int Game::validate(char *c)
        /* check for ambiguous move */
        if(cardinalSearch(Bishop, 0, pos[0], pos[1]) == 1)
        {
-         if(game_board[pos[0]][pos[1]] == -1)
+         if(translated_move->getCapture() == 0 && game_board[pos[0]][pos[1]] == -1 && 
+	    moveSafe(0,cords[0],cords[1],pos[0],pos[1]) == 0)
          {
 		/* valid bishop move */
                 boardSwap(0, cords[0], cords[1], pos[0], pos[1]);	// update board
                 turn++;							// increment turn
                 return 1;						// return valid 
          }
-         else if(translated_move->getCapture() == 1 && game_board[pos[0]][pos[1]] < 16)
+         else if(translated_move->getCapture() == 1 && game_board[pos[0]][pos[1]] < 16 &&
+                 moveSafe(0,cords[0],cords[1],pos[0],pos[1]) == 0)
          {
 		/* valid bishop capture */
                 boardSwap(1, cords[0], cords[1], pos[0], pos[1]);	// update board
@@ -538,14 +1034,16 @@ int Game::validate(char *c)
        /* check for ambiguous move */
        if(cardinalSearch(Bishop, 1, pos[0], pos[1]) == 1)
        {
-         if(game_board[pos[0]][pos[1]] == -1)
+         if(translated_move->getCapture() == 0 && game_board[pos[0]][pos[1]] == -1 && 
+	    moveSafe(1,cords[0],cords[1],pos[0],pos[1]) == 0)
          {
          	/* valid bishop move */
                 boardSwap(0, cords[0], cords[1], pos[0], pos[1]);	// update board
                 turn++;							// increment turn
                 return 1;						// return valid
          }
-         else if(translated_move->getCapture() == 1 && game_board[pos[0]][pos[1]] > 15)
+         else if(translated_move->getCapture() == 1 && game_board[pos[0]][pos[1]] > 15 &&
+                 moveSafe(1,cords[0],cords[1],pos[0],pos[1]) == 0)
          {
 		/* valid bishop capture */
                 boardSwap(1, cords[0], cords[1], pos[0], pos[1]);	// update board
@@ -557,52 +1055,120 @@ int Game::validate(char *c)
      }
    } /* end bishop */
 
-   /**
-    *  Queen
-    */
+   /***********
+    *  Queen  *
+    ***********/
    else if(translated_move->getPiece() == Queen) 
    {
      if(translated_move->getPlayer() == 0) 		/* White's turn */
      {
-       /* check for queen's existence */
-       if(cardinalSearch(Queen, 0, pos[0], pos[1]) == 1)
+       /* Queenside Castle */
+       if(translated_move->getCastle() == 1)
        {
-         if(game_board[pos[0]][pos[1]] == -1)
+         if(debug)
+	    cout << "queenside castle" << endl;
+
+	 if( game_board[0][7] == 24 && the_pieces.getPiece(24)->isMoved() == false &&
+             game_board[4][7] == 31 && the_pieces.getPiece(31)->isMoved() == false &&
+ 	     game_board[1][7] == -1 && game_board[2][7] == -1 && game_board[3][7] == -1 )
          {
+             boardSwap(0,4,7,2,7);	// move king
+	     boardSwap(0,0,7,3,7);	// move rook
+	  
+	     if( kingSafe(1,0,0,0) == 1 || kingAround(0,0,0) == 1 )	// check if castle would end in check
+             {
+		cout << "error: castle would put king in check!" << endl;
+		boardSwap(0,2,7,4,7);	// move king back
+		boardSwap(0,3,7,0,7);	// move rook back
+	     }
+	     else
+	     {
+	     	turn++;			// increment turn
+	     	return 1;		// return valid
+	     }
+         }
+       }// end castle
+       else
+       {
+         /* check for queen's existence */
+         if(cardinalSearch(Queen, 0, pos[0], pos[1]) == 1)
+         {
+           if(translated_move->getCapture() == 0 && game_board[pos[0]][pos[1]] == -1 && 
+	      moveSafe(0,cords[0],cords[1],pos[0],pos[1]) == 0)
+           {
 		/* valid queen move */
                 boardSwap(0, cords[0], cords[1], pos[0], pos[1]);	// update board
                 turn++;							// increment turn
                 return 1;						// return valid
-         }
-         else if(translated_move->getCapture() == 1 && game_board[pos[0]][pos[1]] < 16)
-         {
+           }
+           else if(translated_move->getCapture() == 1 && game_board[pos[0]][pos[1]] < 16 && 
+                 moveSafe(0,cords[0],cords[1],pos[0],pos[1]) == 0)
+           {
 		/* valid queen capture */
                 boardSwap(1, cords[0], cords[1], pos[0], pos[1]);	// update board
                 turn++;							// increment turn
                 return 1;						// return valid 
+           }
+           return 0; /* invalid move catch */
          }
-         return 0; /* invalid move catch */
        }
      }
      else       /* Black's turn */
      {
-       if(cardinalSearch(Queen, 1, pos[0], pos[1]) == 1)
+       /* Queenside Castle */
+       if(translated_move->getCastle() == 1)
        {
-         if(game_board[pos[0]][pos[1]] == -1)
+         if(debug)
+            cout << "queenside castle" << endl;
+
+         if( game_board[0][0] == 8 && the_pieces.getPiece(8)->isMoved() == false &&
+             game_board[4][0] == 15 && the_pieces.getPiece(15)->isMoved() == false &&
+             game_board[1][0] == -1 && game_board[2][0] == -1 && game_board[3][0] == -1 )
          {
-                boardSwap(0, cords[0], cords[1], pos[0], pos[1]);
-                turn++;
-                return 1;
+             boardSwap(0,4,0,2,0);	// move king
+	     boardSwap(0,0,0,3,0);	// move rook
+
+	     if( kingSafe(1,1,0,0) == 1 || kingAround(1,0,0) == 1 )	// check if castle would end in check
+	     {
+		cout << "error: castle would put king in check!" << endl;
+		boardSwap(0,2,0,4,0);	// move king back
+		boardSwap(0,3,0,0,0);	// move rook back
+	     }
+             else
+             {
+	       turn++;			// increment turn
+	       return 1;		// return valid
+	     }
          }
-         else if(translated_move->getCapture() == 1 && game_board[pos[0]][pos[1]] > 15)
+       }// end castle
+       else
+       {
+         /* check for queen's existence */
+         if(cardinalSearch(Queen, 1, pos[0], pos[1]) == 1)
          {
-                boardSwap(1, cords[0], cords[1], pos[0], pos[1]);
-                turn++;
-                return 1;
+cout << 1 << endl;
+           if(translated_move->getCapture() == 0 && game_board[pos[0]][pos[1]] == -1 && 
+	      moveSafe(1,cords[0],cords[1],pos[0],pos[1]) == 0)
+           {  
+		/* valid queen move */
+                boardSwap(0, cords[0], cords[1], pos[0], pos[1]);	// update board
+                turn++;							// increment turn
+                return 1;						// return valid
+           }
+           else if(translated_move->getCapture() == 1 && game_board[pos[0]][pos[1]] > 15 /*&&
+                 moveSafe(1,cords[0],cords[1],pos[0],pos[1]) == 0*/)
+           {
+		/* valid queen capture */
+                boardSwap(1, cords[0], cords[1], pos[0], pos[1]);	// update board
+                turn++;							// increment turn
+                return 1;						// return valid 
+           }
+cout << 2 << endl;
+           return 0; /* invalid move catch */
          }
-         /* else invalid move */
+cout << 3 << endl;
        }
-     } 
+     }  
    } /* end queen */
 
    /**
@@ -610,12 +1176,75 @@ int Game::validate(char *c)
     */
    else if(translated_move->getPiece() == King) 
    {
+     if(translated_move->getPlayer() == 0)		/* white's turn */
+     {
+        /* kingside castle */
+        if(translated_move->getCastle() == 1)
+        { 
+          if(debug)
+	     cout << "kingside castle" << endl;
+	  
+	  if( game_board[7][7] == 25 && the_pieces.getPiece(25)->isMoved() == false &&
+              game_board[4][7] == 31 && the_pieces.getPiece(31)->isMoved() == false &&
+	      game_board[5][7] == -1 && game_board[6][7] == -1 )
+          {
+		boardSwap(0,4,7,6,7);			// move king
+		boardSwap(0,7,7,5,7);			// move rook
+               
+		if( kingSafe(1,0,0,0) == 1 || kingAround(0,0,0) == 1 )	// check if castle would end in check
+		{
+		   cout << "error: castle would put king in check!" << endl;
+		   boardSwap(0,6,7,4,7);		// move knig back
+		   boardSwap(0,5,7,7,7);		// move rook back
+                }
+                else
+	        {
+		  turn++;				// increment turn 
+		  return 1;				// return valid
+	        }
+          }
+
+        }// end castle
+
+	//TODO TODO TODO
+     }
+     else						/* black's turn */
+     {
+       /* kingside castle */
+        if(translated_move->getCastle() == 1)
+        {
+          if(debug)
+             cout << "kingside castle" << endl;
+
+          if( game_board[7][0] == 9 && the_pieces.getPiece(9)->isMoved() == false &&
+              game_board[4][0] == 15 && the_pieces.getPiece(15)->isMoved() == false &&
+              game_board[5][0] == -1 && game_board[6][0] == -1 )
+          {
+           	boardSwap(0,4,0,6,0);			// move king
+		boardSwap(0,0,0,5,0);			// move rook
+
+                if( kingSafe(1,1,0,0) == 1 || kingAround(1,0,0) == 1 )	// check if castle would end in check
+		{
+		   cout << "error: castle would put king in check!" << endl;
+		   boardSwap(0,6,0,4,0);		// move king back
+		   boardSwap(0,5,0,0,0);		// move rook back
+ 		}
+		else
+		{
+		  turn++;				// increment turn
+		  return 1;				// return valid
+	        }
+          }
+
+        }// end castle
+	// TODO TODO TODO
+     }
 
    } /* end king */
    else
    {
      /* else invalid move given */
-     cout << "5error: invalid move" << endl;
+     cout << "error: invalid move" << endl;
      return 0;
    }
 } /* end validate */
@@ -625,8 +1254,8 @@ int Game::validate(char *c)
  */
 int Game::kingSafe(int mode, int turn, int x_offset, int y_offset)
 {
-   int x,y;	  // king's x,y
-   int in_check;  // check flag
+   int x,y;	  	// king's x,y
+   int in_check = 0;	// check flag
 
    // Checkmate Check
    if(mode == 0)
@@ -639,6 +1268,7 @@ int Game::kingSafe(int mode, int turn, int x_offset, int y_offset)
              cout << "white king in check" << endl;
       
        	  /* search for a free space that would not put king into check */
+          in_check = 0;
           x = the_pieces.getPiece(31)->getPos()[0];
           y = the_pieces.getPiece(31)->getPos()[1];
 
@@ -754,10 +1384,9 @@ int Game::kingSafe(int mode, int turn, int x_offset, int y_offset)
    {
      if(turn == 0 )		/* White's Turn */
      {
+        in_check = 0;
         x = the_pieces.getPiece(31)->getPos()[0] + x_offset;
         y = the_pieces.getPiece(31)->getPos()[1] + y_offset;
-        if(debug)
-	  cout << "white king @ " << x << ", " << y << endl;
   
         if( cardinalSearch(Queen, 1, x, y) != 0 || 
             cardinalSearch(Bishop, 1, x, y) != 0 ||
@@ -767,70 +1396,73 @@ int Game::kingSafe(int mode, int turn, int x_offset, int y_offset)
           if(debug)
              cout << "Q/B/R/K check" << endl;
 	  in_check = 1;
-          return 1;
         }
         // look for pawns
         else if( x-1 >= 0 && y-1 >= 0 && 
                  game_board[x-1][y-1] >= 0 && game_board[x-1][y-1] < 8 )
         {
           if(debug)
-	    cout << "Pawn check" << endl;
+	    cout << "pawn check" << endl;
           in_check = 1;
-          return 1;
         }
         else if( x+1 < 8 && y-1 >= 0 &&
                  game_board[x+1][y-1] >= 0 && game_board[x+1][y-1] < 8 )
         {
           if(debug)
-	    cout << "Pawn check" << endl;
+	    cout << "pawn check" << endl;
           in_check = 1;
-          return 1;
         }
         else if( kingAround(0, x, y) == 1 )
         {
           if(debug)
-	    cout << "King check" << endl;
+	    cout << "king check" << endl;
           in_check = 1;
-          return 1;
         }
-        // look for king
-        
-        /* else not in check */
-        return 0;
+        if(in_check)
+	   cout << "White king is in check!" << endl;
+
+        return in_check;
      }
+
      else		/* Black's Turn */
      {
         x = the_pieces.getPiece(15)->getPos()[0] + x_offset;
         y = the_pieces.getPiece(15)->getPos()[1] + y_offset;
-
+        
         if( cardinalSearch(Queen, 0, x, y) != 0 ||
             cardinalSearch(Bishop, 0, x, y) != 0 ||
             cardinalSearch(Rook, 0, x, y) != 0 ||
             cardinalSearch(Knight, 0, x, y) != 0 )
         {
+          if(debug)
+            cout << "Q/B/R/K check" << endl;           
           in_check = 1;
-          return 1;
         }
         // Look for pawns
         else if( x-1 >= 0 && y-1 >= 0 &&
                  game_board[x-1][y-1] > 15 && game_board[x-1][y-1] < 24 )
         {
+          if(debug)
+            cout << "pawn check" << endl;
           in_check = 1;
-          return 1;
         }
         else if( x+1 < 8 && y-1 >= 0 &&
                  game_board[x+1][y-1] > 15 && game_board[x+1][y-1] < 24 )
         {
+          if(debug)
+            cout << "pawn check" << endl;
           in_check = 1;
-          return 1;
         }
         else if( kingAround(1, x, y) == 1 )
         {
+          if(debug)
+            cout << "king check" << endl;
           in_check = 1;
-          return 1;
         }
-        /* else not in check */
-        return 0;
+        if(in_check)
+	  cout << "Black king is in check!" << endl;
+
+        return in_check;
      }
 
    } /* end mode 1 */
@@ -861,10 +1493,6 @@ int Game::moveSafe(int turn, int x1, int y1, int x2, int y2)
    /* check to see if the king is now in check */
    if(turn == 0)			/* White's Turn */
    {
-      /* get the king's cords */
-      x = the_pieces.getPiece(31)->getPos()[0];
-      y = the_pieces.getPiece(31)->getPos()[1];
-
       /* make sure not now in check */
       if( kingSafe(1,0,0,0) == 1 )
 	 valid = 1;
@@ -873,10 +1501,6 @@ int Game::moveSafe(int turn, int x1, int y1, int x2, int y2)
    }
    else					/* Black's Turn */
    {
-      /* get the king's cords */
-      x = the_pieces.getPiece(15)->getPos()[0];
-      y = the_pieces.getPiece(15)->getPos()[1];
-
       /* make sure not now in check */
       if( kingSafe(1,1,0,0) == 1 )
          valid = 1;
@@ -890,6 +1514,8 @@ int Game::moveSafe(int turn, int x1, int y1, int x2, int y2)
      for(int tX = 0; tX < 8; tX++)
         game_board[tX][tY] = temp_board[tX][tY];
    }
+   if(valid)
+     cout << "error: move would place your king into check" << endl;
    return valid;
 
 } /* end move safe */
@@ -1037,7 +1663,21 @@ void Game::printBoard()
    }	
    cout << endl;
 
-} /* end print board */
+}// end print board
+
+void Game::printLogicalBoard()
+{
+  for(int y=0; y<8; y++) 
+  {
+    for(int x=0; x<8; x++)
+    {
+      cout << game_board[x][y] << "\t";
+    }
+    cout << endl;
+  }
+  cout << endl;
+  
+}// end logical board
 
 /**
  *
@@ -1076,26 +1716,27 @@ int Game::cardinalSearch(Piece_enum p, int t, int x, int y)
              cords[1] = n;
              return 1;
           }
-          if(t == 1 && p == Queen && game_board[x][n] == 14)
+          else if(t == 1 && p == Queen && game_board[x][n] == 14)
           {
+cout << "hit" << endl;
              cords[0] = x;
              cords[1] = n;
              return 1;
           }
-          if(t == 0 && p == Rook && game_board[x][n] == 24 || game_board[x][n] == 25)
+          else if(t == 0 && p == Rook && (game_board[x][n] == 24 || game_board[x][n] == 25) )
 	  {
              cords[0] = x;
              cords[1] = n;
              rook_ambig++;
           }
-          if(t == 1 && p == Rook && game_board[x][n] == 8 || game_board[x][n] == 9)
+          else if(t == 1 && p == Rook && (game_board[x][n] == 8 || game_board[x][n] == 9) )
           {
              cords[0] = x;
              cords[1] = n;
              rook_ambig++;
           }
-	  /* else space is not empty and not target -> blocked, stop search */
-          break;
+	  else
+            break;	/* else space is not empty and not target -> blocked, stop search */
         }
 	/* else space is empty -> continue search */
 
@@ -1112,26 +1753,26 @@ int Game::cardinalSearch(Piece_enum p, int t, int x, int y)
              cords[1] = y;
              return 1;
           }
-          if(t == 1 && p == Queen && game_board[e][y] == 14)
+          else if(t == 1 && p == Queen && game_board[e][y] == 14)
           {
              cords[0] = e;
              cords[1] = y;
              return 1;
           }
-          if(t == 0 && p == Rook && game_board[e][y] == 24 || game_board[e][y] == 25)
+          else if(t == 0 && p == Rook && (game_board[e][y] == 24 || game_board[e][y] == 25) )
           {
              cords[0] = e;
              cords[1] = y;
              rook_ambig++;
           }
-          if(t == 1 && p == Rook && game_board[e][y] == 8 || game_board[e][y] == 9)
+          else if(t == 1 && p == Rook && (game_board[e][y] == 8 || game_board[e][y] == 9) )
           {
              cords[0] = e;
              cords[1] = y;
              rook_ambig++;
           }
-          /* else space is not empty and not target -> blocked, stop search */
-          break;
+          else 
+	    break;	/* else space is not empty and not target -> blocked, stop search */
         }
         /* else space is empty -> continue search */
 
@@ -1148,62 +1789,64 @@ int Game::cardinalSearch(Piece_enum p, int t, int x, int y)
              cords[1] = s;
              return 1;
           }
-          if(t == 1 && p == Queen && game_board[x][s] == 14)
+          else if(t == 1 && p == Queen && game_board[x][s] == 14)
           {
              cords[0] = x;
              cords[1] = s;
              return 1;
           }
-          if(t == 0 && p == Rook && game_board[x][s] == 24 || game_board[x][s] == 25)
+          else if(t == 0 && p == Rook && (game_board[x][s] == 24 || game_board[x][s] == 25) )
           {
              cords[0] = x;
              cords[1] = s;
              rook_ambig++;
           }
-          if(t == 1 && p == Rook && game_board[x][s] == 8 || game_board[x][s] == 9)
+          else if(t == 1 && p == Rook && (game_board[x][s] == 8 || game_board[x][s] == 9) )
           {
              cords[0] = x;
              cords[1] = s;
              rook_ambig++;
           }
-          /* else space is not empty and not target -> blocked, stop search */
-          break;
+          else
+	    break;	/* else space is not empty and not target -> blocked, stop search */
+          
         }
         /* else space is empty -> continue search */
 
      } /* end south */
 
      // West Search
-     for(int e = 0; e >= 0; e--)
+     for(int w = x; w >= 0; w--)
      {
-	if(game_board[e][y] != -1)
+	if(game_board[w][y] != -1)
         {
-          if(t == 0 && p == Queen && game_board[e][y] == 30)
+          if(t == 0 && p == Queen && game_board[w][y] == 30)
           {
-             cords[0] = e;
+             cords[0] = w;
              cords[1] = y;
              return 1;
           }
-          if(t == 1 && p == Queen && game_board[e][y] == 14)
+          else if(t == 1 && p == Queen && game_board[w][y] == 14)
           {
-             cords[0] = e;
+             cords[0] = w;
              cords[1] = y;
              return 1;
           }
-          if(t == 0 && p == Rook && game_board[e][y] == 24 || game_board[e][y] == 25)
+          else if(t == 0 && p == Rook && (game_board[w][y] == 24 || game_board[w][y] == 25) )
           {
-             cords[0] = e;
+             cords[0] = w;
              cords[1] = y;
              rook_ambig++;
           }
-          if(t == 1 && p == Rook && game_board[e][y] == 8 || game_board[e][y] == 9)
+          else if(t == 1 && p == Rook && (game_board[w][y] == 8 || game_board[w][y] == 9) )
           {
-             cords[0] = e;
+             cords[0] = w;
              cords[1] = y;
              rook_ambig++;
           }
-          /* else space is not empty and not target -> blocked, stop search */
-          break;
+          else 
+	    break;/* else space is not empty and not target -> blocked, stop search */
+          
         }
         /* else space is empty -> continue search */
 
@@ -1213,6 +1856,8 @@ int Game::cardinalSearch(Piece_enum p, int t, int x, int y)
      	return 1;
      else if(p == Rook && rook_ambig > 1)
      {
+	if(debug)
+	   cout << "rook ambig: " << rook_ambig << endl;
         cout << "error: ambiguous move, specify file/rank" << endl;
         return 2;
      }
@@ -1237,32 +1882,32 @@ int Game::cardinalSearch(Piece_enum p, int t, int x, int y)
                 cords[1] = search_cords[1];
                 return 1;
             }
-            if(t == 1 && p == Queen && game_board[search_cords[0]][search_cords[1]] == 14)
+            else if(t == 1 && p == Queen && game_board[search_cords[0]][search_cords[1]] == 14)
             {
 		cords[0] = search_cords[0];
                 cords[1] = search_cords[1];
                 return 1;
             }
-            if(t == 0 && p == Bishop &&
-               game_board[search_cords[0]][search_cords[1]] == 28 ||
-               game_board[search_cords[0]][search_cords[1]] == 29 )
+            else if(t == 0 && p == Bishop &&
+               (game_board[search_cords[0]][search_cords[1]] == 28 ||
+                game_board[search_cords[0]][search_cords[1]] == 29 ))
             {
             	cords[0] = search_cords[0];
  		cords[1] = search_cords[1];
                 bishop_ambig++;
                 break;
             } 
-            if(t == 1 && p == Bishop &&
-               game_board[search_cords[0]][search_cords[1]] == 12 ||
- 	       game_board[search_cords[0]][search_cords[1]] == 13 )
+            else if(t == 1 && p == Bishop &&
+               (game_board[search_cords[0]][search_cords[1]] == 12 ||
+ 	        game_board[search_cords[0]][search_cords[1]] == 13 ))
             {
 		cords[0] = search_cords[0];
  		cords[1] = search_cords[1];
                 bishop_ambig++;
                 break;
             }
-	    /* else space is not empty and is not target -> blocked, stop searching */
-            break;
+	    else
+		break;	/* else space is not empty and is not target -> blocked, stop searching */
          }
        }
        else	/* off board */
@@ -1287,32 +1932,33 @@ int Game::cardinalSearch(Piece_enum p, int t, int x, int y)
                 cords[1] = search_cords[1];
                 return 1;
             }
-            if(t == 1 && p == Queen && game_board[search_cords[0]][search_cords[1]] == 14)
+            else if(t == 1 && p == Queen && game_board[search_cords[0]][search_cords[1]] == 14)
             {
                 cords[0] = search_cords[0];
                 cords[1] = search_cords[1];
                 return 1;
             }
-            if(t == 0 && p == Bishop &&
-               game_board[search_cords[0]][search_cords[1]] == 28 ||
-               game_board[search_cords[0]][search_cords[1]] == 29 )
+            else if(t == 0 && p == Bishop &&
+               (game_board[search_cords[0]][search_cords[1]] == 28 ||
+                game_board[search_cords[0]][search_cords[1]] == 29 ))
             {
                 cords[0] = search_cords[0];
                 cords[1] = search_cords[1];
                 bishop_ambig++;
                 break;
             }
-            if(t == 1 && p == Bishop &&
-               game_board[search_cords[0]][search_cords[1]] == 12 ||
-               game_board[search_cords[0]][search_cords[1]] == 13 )
+            else if(t == 1 && p == Bishop &&
+               (game_board[search_cords[0]][search_cords[1]] == 12 ||
+                game_board[search_cords[0]][search_cords[1]] == 13 ))
             {
                 cords[0] = search_cords[0];
                 cords[1] = search_cords[1];
                 bishop_ambig++;
                 break;
             }
-            /* else space is not empty and is not target -> blocked, stop searching */
-            break;
+            else 
+		break;	/* else space is not empty and is not target -> blocked, stop searching */
+            
          }
        }
        else	/* off board */
@@ -1337,32 +1983,32 @@ int Game::cardinalSearch(Piece_enum p, int t, int x, int y)
                 cords[1] = search_cords[1];
                 return 1;
             }
-            if(t == 1 && p == Queen && game_board[search_cords[0]][search_cords[1]] == 14)
+            else if(t == 1 && p == Queen && game_board[search_cords[0]][search_cords[1]] == 14)
             {
                 cords[0] = search_cords[0];
                 cords[1] = search_cords[1];
                 return 1;
             }
-            if(t == 0 && p == Bishop &&
-               game_board[search_cords[0]][search_cords[1]] == 28 ||
-               game_board[search_cords[0]][search_cords[1]] == 29 )
+            else if(t == 0 && p == Bishop &&
+               (game_board[search_cords[0]][search_cords[1]] == 28 ||
+                game_board[search_cords[0]][search_cords[1]] == 29 ))
             {
                 cords[0] = search_cords[0];
                 cords[1] = search_cords[1];
                 bishop_ambig++;
                 break;
             }
-            if(t == 1 && p == Bishop &&
-               game_board[search_cords[0]][search_cords[1]] == 12 ||
-               game_board[search_cords[0]][search_cords[1]] == 13 )
+            else if(t == 1 && p == Bishop &&
+               (game_board[search_cords[0]][search_cords[1]] == 12 ||
+                game_board[search_cords[0]][search_cords[1]] == 13 ))
             {
                 cords[0] = search_cords[0];
                 cords[1] = search_cords[1];
                 bishop_ambig++;
                 break;
             }
-            /* else space is not empty and is not target -> blocked, stop searching */
-            break;
+            else 
+		break;	/* else space is not empty and is not target -> blocked, stop searching */
          }
        }
        else	/* off board */
@@ -1387,32 +2033,32 @@ int Game::cardinalSearch(Piece_enum p, int t, int x, int y)
                 cords[1] = search_cords[1];
                 return 1;
             }
-            if(t == 1 && p == Queen && game_board[search_cords[0]][search_cords[1]] == 14)
+            else if(t == 1 && p == Queen && game_board[search_cords[0]][search_cords[1]] == 14)
             {
                 cords[0] = search_cords[0];
                 cords[1] = search_cords[1];
                 return 1;
             }
-            if(t == 0 && p == Bishop &&
-               game_board[search_cords[0]][search_cords[1]] == 28 ||
-               game_board[search_cords[0]][search_cords[1]] == 29 )
+            else if(t == 0 && p == Bishop &&
+               (game_board[search_cords[0]][search_cords[1]] == 28 ||
+                game_board[search_cords[0]][search_cords[1]] == 29 ))
             {
                 cords[0] = search_cords[0];
                 cords[1] = search_cords[1];
                 bishop_ambig++;
                 break;
             }
-            if(t == 1 && p == Bishop &&
-               game_board[search_cords[0]][search_cords[1]] == 12 ||
-               game_board[search_cords[0]][search_cords[1]] == 13 )
+            else if(t == 1 && p == Bishop &&
+               (game_board[search_cords[0]][search_cords[1]] == 12 ||
+                game_board[search_cords[0]][search_cords[1]] == 13 ))
             {
                 cords[0] = search_cords[0];
                 cords[1] = search_cords[1];
                 bishop_ambig++;
                 break;
             }
-            /* else space is not empty and is not target -> blocked, stop searching */
-            break;
+	    else
+		break;	/* else space is not empty and is not target -> blocked, stop searching */
          }
        }
        else	/* off board */
@@ -1429,6 +2075,7 @@ int Game::cardinalSearch(Piece_enum p, int t, int x, int y)
      }
   } /* end ne,se,sw,nw */
 
+  return 0;
 } /* end cardinal */
 
 /**
@@ -1454,6 +2101,8 @@ int Game::kingAround(int turn, int x, int y)
         return 1;
       if( x-1 >= 0 && y-1 >= 0 && game_board[x-1][y-1] == 16 )	// northwest
         return 1;
+      
+      return 0;	
    }
    else
    {

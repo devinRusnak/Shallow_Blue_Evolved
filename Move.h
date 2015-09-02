@@ -22,6 +22,7 @@ public:
    void setPiece(Piece_enum);
    void setRank(int);
    void setFile(char);
+   void setFileAmbig(char);
    void setPlayer(int);
    void setCapture(int);
    void setCastle(int);
@@ -34,6 +35,7 @@ public:
    Piece_enum getPiece();
    int getRank();
    int getFile();
+   int getFileAmbig();
    int getPlayer();
    int getCapture();
    int getValid();
@@ -47,6 +49,7 @@ private:
    // Class variables
    enum Piece_enum piece;	// Piece being moved
    int dest[2];			// Piece destination coords
+   int file_ambig;		// File for ambiguious moves
    int player;			// Player making move
    int capture;			// Flag for capture move
    int valid;			// Flag for out-of-bounds
@@ -54,7 +57,7 @@ private:
    int promotion;		// Flag for pawn promotion
    int enpass;			// Flag for en passant  
    int check;			// Flag for check
-   int specify;			// Flag for ambiguity resolution
+   int specify;			// Piece ID for pawn promotion
 
    // Internal methods
    void validityCheck();		
