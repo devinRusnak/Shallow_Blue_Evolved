@@ -2,7 +2,7 @@
 #define MOVE_H
 /* 
  * Move.h
- * @author Devin Rusnak 2015
+ * Devin Rusnak
  */
 #include <stdlib.h>
 #include <iostream>

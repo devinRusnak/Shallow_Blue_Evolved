@@ -1,5 +1,11 @@
+/*!
+ *  Updater.h 
+ *  \author Devin Rusnak
+ */
+
 #ifndef UPDATER_H
 #define UPDATER_H
+
 #include <string>
 #include <cstring>
 #include <iostream>
@@ -20,8 +26,8 @@ public:
    ~Updater();
 
    // Methods
-   Move* translateMove(int, char*);
    void setDebug(int);
+   Move* translateMove(int, char*);
 
 private:
    // variables:
@@ -30,5 +36,6 @@ private:
    Move move;
 
    int getInputFile(char);
+
 }; // end class
 #endif // UPDATER_H

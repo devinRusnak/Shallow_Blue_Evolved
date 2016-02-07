@@ -1,16 +1,72 @@
+/*!
+ * \class Updater Updater.h
+ * \brief Parses user's input.
+ * \author Devin Rusnak
+ * \date 2014-2016
+ * \copyright GNU Public License.
+ *
+ *   Updater's main purpose is to take the user entered string and
+ * figure out what move the user wants to make. This game of chess 
+ * is using Algebraic Chess Notation to denote moves as the game is
+ * ment to be played from a command line and the notation works 
+ * nicely with an ASCII representation. The main function 
+ * 'translateMove' creates and populates an instance of the 'Move'
+ * class and returns it to the caller to be easily decyphered.
+ */
+
 #include "Updater.h"
 using namespace std;
 
+/*!
+ * \memberof Updater
+ * \brief  Default constructor, creates a place in memory for the user's input.
+ */
 Updater::Updater()
 {
   memset(&input, 0, sizeof(char)*18); 
 }
 
+/*!
+ * \memberof Updater
+ * \brief Destructor 
+ */
 Updater::~Updater()
 {
    // delete input?
 }
 
+/*!
+ * setDebug(int)
+ * \memberof Updater
+ * \param d - the passed debug value, 0-Off 1-On.
+ * \brief Sets the debug flag.
+ * 
+ *   This function exists so other classes can set the debug flag
+ * if the user chooses and thus this class will know when to print 
+ * certian messages.
+ */
+void Updater::setDebug(int d)
+{
+   debug = d;
+}
+
+/*!
+ * translateMove(int, char*)
+ * \memberof Updater
+ * \param turn - denotes if its white's (0) or black's (1) turn.
+ * \param move_given - user's command line input.
+ * \return - an instance of the Move class that is filled out based
+ *           on the user's input.
+ * \brief Creates a Move instance based on user's input.
+ *
+ *   Since there are only so many valid moves at any given turn
+ * of the game the function takes the user's input and uses nestled
+ * switches to go through the input char by char to check if it is a
+ * valid move. Given how Algrebraic Notation is formated and the longest
+ * move representation is ~6 characters things don't get too out of hand
+ * or convoluted. Ultimately a Move instance is created, filled out, and 
+ * returned so that the caller can prosses the move effeciently.
+ */
 Move* Updater::translateMove(int turn, char *move_given)
 {
    /* reset variables */
@@ -475,13 +531,3 @@ Move* Updater::translateMove(int turn, char *move_given)
       return 0;
 
 }// end translate move
-
-int Updater::getInputFile(char c)
-{
-   return 0;
-}
-
-void Updater::setDebug(int d)
-{
-   debug = d;
-}

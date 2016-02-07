@@ -1,30 +1,68 @@
-/**
- *
+/*!
+ * \class Pieces Pieces.h
+ * \brief Contains a list of instances of the Piece class.
+ * \author Devin Rusnak
+ * \date 2014-2016
+ * \copyright GNU Public License.
+ * 
+ *   Pieces is basically an array of instances of the Piece
+ * class with some helper functions to maintain said array.
  */
 #include "Pieces.h"
 using namespace std;
 
+/*!
+ * \memberof Pieces
+ * \brief Default constructor.
+ */
 Pieces::Pieces()
 {
   initializePieces();
 }
 
+/*!
+ * \memberof Pieces
+ * \brief Destructor
+ *
+ * Deletes the created instances of the Piece class.
+ */
 Pieces::~Pieces()
 {
   for(int i = 0; i < 32; i++)
      delete piece_list[i];
 }
 
+/*!
+ * getPiece(int)
+ * \memberof Pieces
+ * \brief Returns a piece from the array.
+ * \param i - index of the piece requested.
+ * \return Pointer to the Piece requested by the given index.
+ */
 Piece* Pieces::getPiece(int i)
 {
   return piece_list[i];
 }
 
+/*!
+ * setPiece(int,Piece*)
+ * \memberof Pieces
+ * \brief Places an instance of Piece into the array at the given index.
+ * \param i - Index of the array.
+ * \param p - Instance of Piece to be placed.
+ */
 void Pieces::setPiece(int i, Piece *p)
 {
   piece_list[i] = p;
 }
 
+/*!
+ * initializePieces()
+ * \memberof Pieces
+ * \brief Initializes the pieces of the array.
+ * 
+ * Sets the inital positions of the pieces.
+ */
 void Pieces::initializePieces()
 {
   for(int i = 0; i < 32; i++)

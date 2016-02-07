@@ -1,8 +1,8 @@
 #ifndef PIECES_H
 #define PIECES_H
-/*
+/*!
  * Pieces.h
- * Devin Rusnak
+ * \author Devin Rusnak
  *
  * Note:
  *    0-7    -  Black's Pawns (left to right)

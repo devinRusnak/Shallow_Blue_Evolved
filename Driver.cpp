@@ -1,5 +1,15 @@
-/**
- * @author Devin Rusnak
+/*!
+ * \class Driver
+ * \brief The class containing main and handles the command line arguments.
+ * \author Devin Rusnak
+ * \date 2014-2016
+ * \copyright GNU Public License.
+ * 
+ *   Driver is the class that contains the main function. It handles the command line 
+ * arguments and sets up the other classes that are needed to play a game. It is 
+ * also responsible for maintaining the main control loop and promts the user(s)
+ * for input that it passes along to the Updater class. At the end of use it also
+ * makes sure the program terminates cleanly.
  */
 #include <unistd.h>
 #include <stdio.h>

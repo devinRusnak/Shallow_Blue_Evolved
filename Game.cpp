@@ -1,12 +1,23 @@
-/*  
- *  Game.cpp
- *  @author Devin Rusnak 2015
+/*!  
+ * \class Game Game.h
+ * \brief Processes moves and maintains game logic/info.
+ * \author Devin Rusnak
+ * \date 2014-2016
+ * \copyright GNU Public License.
+ *
+ *   Game maintains the information about the game board and creates
+ * all other needed class instances. Its main function validate(char*),
+ * recieves a pointer to a char array that is the user(s) input. It 
+ * translates this into a Move class instance that it then uses to check
+ * if the move is legal and updates the game board and all other items if
+ * it is.
  */
 #include "Game.h"
 using namespace std;
 
-/**
- *
+/*!
+ * \memberof Game
+ * \brief Default Constructor
  */
 Game::Game()
 {
@@ -20,8 +31,9 @@ Game::Game()
    initBoard();
 }
 
-/**
- *
+/*!
+ * \memberof Game
+ * \brief Detailed Constructor
  */
 Game::Game(int m, int id, const char *file)
 {
@@ -35,24 +47,31 @@ Game::Game(int m, int id, const char *file)
    initBoard();
 }
 
-/**
+/*!
+ * \memberof Game
+ * \brief Destructor
  *
+ * Deletes the instance of itself.
  */
 Game::~Game()
 {
    delete game_instance;
 }
 
-/**
- *
+/*!
+ * start()
+ * \memberof Game
+ * \brief Changes the flag for an active game to true.
  */
 void Game::start()
 {
    active = 1;
 }
 
-/**
- *
+/*!
+ * stop()
+ * \memberof Game
+ * \brief Changes the flag for an active game to false.
  */
 void Game::stop()
 {
@@ -60,8 +79,10 @@ void Game::stop()
    //TODO stop nicely
 }
 
-/**
- *
+/*!
+ * debugToggle()
+ * \memberof Game
+ * \brief Toggles the flag for debug mode.
  */
 void Game::debugToggle()
 {
@@ -77,16 +98,24 @@ void Game::debugToggle()
    }
 }
 
-/**
- *
+/*!
+ * isActive()
+ * \memberof Game
+ * \breif Returns a boolean coresponding to the state of the game.
+ * \return A boolean that states if the game is active or not.
  */
 bool Game::isActive() 
 {
    return active;
 }
 
-/** TODO
+/*!
+ * validate(char*)
+ * \memberof Game
+ * \brief Takes the user(s)' input and checks if it is a valid move.
+ * \param c - A pointer to a char array that contains the user(s) move input.
  *
+ *   TODO   
  */
 int Game::validate(char *c)
 {
@@ -116,7 +145,7 @@ int Game::validate(char *c)
       cout << "\n" << translated_move->getPiece() << " " << translated_move->getRank()
            << " " << translated_move->getFile() << " " << translated_move->getPlayer() 
 	   << " " << pos[0] << " " << pos[1] << " " << translated_move->getPromotion() 
-	   << " " << translated_move->getSpecify() << " " << translated_move->getCastle() << endl; 
+	   << " " << translated_move->getSpecify() << " " << translated_move->getCapture() << endl; 
 
    /* Check for quit flag */
    if(translated_move != NULL && 
@@ -1093,6 +1122,8 @@ int Game::validate(char *c)
          /* check for queen's existence */
          if(cardinalSearch(Queen, 0, pos[0], pos[1]) == 1)
          {
+		if(debug)
+		   cout << "Queen Found" << endl;
            if(translated_move->getCapture() == 0 && game_board[pos[0]][pos[1]] == -1 && 
 	      moveSafe(0,cords[0],cords[1],pos[0],pos[1]) == 0)
            {
@@ -1155,8 +1186,8 @@ cout << 1 << endl;
                 turn++;							// increment turn
                 return 1;						// return valid
            }
-           else if(translated_move->getCapture() == 1 && game_board[pos[0]][pos[1]] > 15 /*&&
-                 moveSafe(1,cords[0],cords[1],pos[0],pos[1]) == 0*/)
+           else if(translated_move->getCapture() == 1 && game_board[pos[0]][pos[1]] > 15 &&
+                 moveSafe(1,cords[0],cords[1],pos[0],pos[1]) == 0)
            {
 		/* valid queen capture */
                 boardSwap(1, cords[0], cords[1], pos[0], pos[1]);	// update board
@@ -1171,9 +1202,9 @@ cout << 3 << endl;
      }  
    } /* end queen */
 
-   /**
-    *  King
-    */
+   /**********
+    *  King  *
+    **********/
    else if(translated_move->getPiece() == King) 
    {
      if(translated_move->getPlayer() == 0)		/* white's turn */
@@ -1205,9 +1236,41 @@ cout << 3 << endl;
           }
 
         }// end castle
+	
+	x = the_pieces.getPiece(31)->getPos()[0];	// get king's x,y
+	y = the_pieces.getPiece(31)->getPos()[1];
 
-	//TODO TODO TODO
-     }
+	/* check for invalid move */
+	if( abs(x-pos[0]) == 1 || abs(y-pos[1]) == 1 )
+	{
+	   // check for valid capture
+	   if(translated_move->getCapture() == 1 &&
+	      game_board[pos[0]][pos[1]] >= 0 &&
+	      game_board[pos[0]][pos[1]] < 15 &&
+	      moveSafe(0,x,y,pos[0],pos[1]) == 0 && 
+	      kingAround(0,pos[0],pos[1]) == 0)
+	   {
+	   	the_pieces.getPiece(31)->setPos(pos[0],pos[1]);      				// set piece's new pos
+                the_pieces.getPiece(game_board[pos[0]][pos[1]])->setPos(-1,-1);                 // set captured piece's pos
+                the_pieces.getPiece(game_board[pos[0]][pos[1]])->setAlive(false);		// set captured dead
+                game_board[pos[0]][pos[1]] = 31;     						// update board 
+                game_board[x][y] = -1;
+                return 1;
+	   }
+	   
+	   // check for valid move
+	   if(game_board[pos[0]][pos[1]] == -1 &&
+	      moveSafe(0,x,y,pos[0],pos[1]) == 0 &&
+	      kingAround(0,pos[0],pos[1]) == 0)
+	   {
+	   	the_pieces.getPiece(31)->setPos(pos[0],pos[1]);		// set king's new pos
+		game_board[pos[0]][pos[1]] = 31;			// update board
+		game_board[x][y] = -1;
+		return 1;
+	   }     
+	}	
+     }// end white's turn
+
      else						/* black's turn */
      {
        /* kingside castle */
@@ -1237,8 +1300,41 @@ cout << 3 << endl;
           }
 
         }// end castle
-	// TODO TODO TODO
-     }
+	
+	x = the_pieces.getPiece(15)->getPos()[0];	// get king's x,y
+	y = the_pieces.getPiece(15)->getPos()[1];
+	
+	/* check for invalid move */
+	if( abs(x-pos[0]) == 1 || abs(y-pos[1]) == 1 )
+	{
+	   // check for valid capture
+           if(translated_move->getCapture() == 1 &&
+              game_board[pos[0]][pos[1]] >= 16 &&
+              game_board[pos[0]][pos[1]] < 32 &&
+              moveSafe(1,x,y,pos[0],pos[1]) == 0 &&
+              kingAround(1,pos[0],pos[1]) == 0)
+           {
+                the_pieces.getPiece(15)->setPos(pos[0],pos[1]);                                 // set piece's new pos
+                the_pieces.getPiece(game_board[pos[0]][pos[1]])->setPos(-1,-1);                 // set captured piece's pos
+                the_pieces.getPiece(game_board[pos[0]][pos[1]])->setAlive(false);		// set captured dead
+                game_board[pos[0]][pos[1]] = 15;                                                // update board 
+                game_board[x][y] = -1;
+                return 1;
+           }
+
+	   // check for valid move
+	   if(game_board[pos[0]][pos[1]] == -1 &&
+	      moveSafe(1,x,y,pos[0],pos[1]) == 0 &&
+	      kingAround(1,pos[0],pos[1]) == 0)
+	   {
+	   	the_pieces.getPiece(15)->setPos(pos[0],pos[1]);		// update king's pos
+		game_board[pos[0]][pos[1]] = 15;			// update board
+		game_board[x][y] = -1;	
+		return 1;
+	   }
+
+	}
+     }// end black's turn
 
    } /* end king */
    else
@@ -1478,6 +1574,8 @@ int Game::moveSafe(int turn, int x1, int y1, int x2, int y2)
    int x, y;				// king's x,y
    int valid;				// int to be returned if valid move or not
 
+   if(debug)
+     cout << "! " << x1 << " " << y1 << " " << x2 << " " << y2 << endl;
    /* save game_board */
    for(int gY = 0; gY < 8; gY++) 
    {
@@ -1702,14 +1800,15 @@ int Game::cardinalSearch(Piece_enum p, int t, int x, int y)
    int search_cords[2];
    int rook_ambig = 0;
    int bishop_ambig = 0;
-
+   
    // North Search
    if(p == Queen || p == Rook)
    {
-     for(int n = y; n >= 0; n--)
+     for(int n = y-1; n >= 0; n--)
      {
         if(game_board[x][n] != -1)
         {
+
 	  if(t == 0 && p == Queen && game_board[x][n] == 30)
           {
 	     cords[0] = x;
@@ -1718,7 +1817,6 @@ int Game::cardinalSearch(Piece_enum p, int t, int x, int y)
           }
           else if(t == 1 && p == Queen && game_board[x][n] == 14)
           {
-cout << "hit" << endl;
              cords[0] = x;
              cords[1] = n;
              return 1;
@@ -1743,7 +1841,7 @@ cout << "hit" << endl;
      } /* end north */
      
      // East Search
-     for(int e = x; e < 8; e++)
+     for(int e = x+1; e < 8; e++)
      {
 	if(game_board[e][y] != -1)
         {
@@ -1779,12 +1877,12 @@ cout << "hit" << endl;
      } /* end east */
      
      // South Search
-     for(int s = y; s < 8; s++)
+     for(int s = y+1; s < 8; s++)
      {
 	if(game_board[x][s] != -1)
         {
           if(t == 0 && p == Queen && game_board[x][s] == 30)
-          {
+          { 
              cords[0] = x;
              cords[1] = s;
              return 1;
@@ -1816,7 +1914,7 @@ cout << "hit" << endl;
      } /* end south */
 
      // West Search
-     for(int w = x; w >= 0; w--)
+     for(int w = x-1; w >= 0; w--)
      {
 	if(game_board[w][y] != -1)
         {
