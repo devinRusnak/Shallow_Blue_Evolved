@@ -83,7 +83,10 @@ int main(int argc, char *argv[])
    if(mode == 0)
         cout << "Human vs Computer...\n" << endl;
    else if(mode == 1)
+   {
         cout << "Human vs Human...\n" << endl;
+        game_ref.setMode(1);
+   }
    else
         cout << "Computer vs Computer...\n" << endl; 
 
@@ -93,46 +96,52 @@ int main(int argc, char *argv[])
    */ 
    if(mode != 2)
    {
-      
+      /* Main command loop, continue whilst game is active */ 
       do 
       {  
-         
-         do	
-         {
-	    if(debug)
+        /* White - Human's Turn */
+        do	
+        {
+	   if(debug)
 	       game_ref.printLogicalBoard();
-            game_ref.printBoard();	
-	    cout << "\nWhite's Turn" << endl;
-            game_ref.kingCheck(0);
-	    cout << "Move: ";
-	    cin >> input;		// Get move input
+           game_ref.printBoard();	
+	   cout << "\nWhite's Turn" << endl;
+           game_ref.kingCheck(0);	// in check?
+	   cout << "Move: ";
+	   cin >> input;		// Get move input
 
-	 }while(game_ref.validate(input) != 1);
-	 //game_ref.recordMove(0,input);	// Record white's move 	 
+	}while(game_ref.validate(input) != 1);
+	//game_ref.recordMove(0,input);	// Record white's move 	 
 
-        
-         if(mode == 0)	
-	   ; 
+        /* Black - Blue's Turn */
+        if(mode == 0)
+	{
+	  if(debug)
+	     game_ref.printLogicalBoard();
+	  game_ref.printBoard();
+          cout << "Blue is thinking..." << endl; 
+          game_ref.kingCheck(1);	// in check?
+        } 	  
 
-         // Black's Turn 
-         else if(game_ref.isActive())
-         {
-      	   do	
-           {
+        /* Black - Human's Turn */
+        if(mode == 1)
+        {
+      	  do	
+          {
              if(debug)
-	        game_ref.printLogicalBoard();
+	       game_ref.printLogicalBoard();
 	     game_ref.printBoard();
-	     cout << "\nBlack's Turn" << endl;
+ 	     cout << "\nBlack's Turn" << endl;
              game_ref.kingCheck(1);	// in check? 
              cout << "Move: ";
              cin >> input;
-           }while(game_ref.validate(input) != 1);
-         } 
-      }while(game_ref.isActive());  
+          }while(game_ref.validate(input) != 1);
+        }
 
-      // Game Over TODO
-   }
-   
+      }while(game_ref.isActive()); 
+    
+	  /* TODO GAME OVER TODO */
+   } 
   /**
    *  CvC
    */ 

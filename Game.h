@@ -8,6 +8,7 @@
 #include "Pieces.h"
 #include "Updater.h"
 #include "Move.h"
+#include "Blue.h"
 using namespace std;
 
 class Game
@@ -26,6 +27,7 @@ public:
    void start();
    void stop();
    void debugToggle();
+   void setMode(int);
    bool isActive();
    int validate(char*);			// input
    void printBoard();
@@ -50,6 +52,7 @@ private:
    Pieces the_pieces;		// the chess pieces
    Updater update;		// game logic
    Move *translated_move;	// filled out move object to check for validity
+   Blue shallow_blue;		// AI Controller
 
    // private class functions
    void initBoard();
@@ -61,6 +64,7 @@ private:
    int kingAround(int,int,int);			// turn, x_offset, y_offset
    int kingSafe(int,int,int,int);  		// mode, turn, x_offset, y_offset
    int moveSafe(int,int,int,int,int);		// turn, x1, y1, x2, y2
+   Move* callBlue(int[8][8], Pieces);		// game_board, the_pieces
 
 }; // end class
 #endif // GAME_H

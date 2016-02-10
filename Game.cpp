@@ -23,7 +23,7 @@ Game::Game()
 {
    turn = 0;
    debug = 0;
-   mode = 1;
+   mode = 0;
    game_id = 1;
    active = 1;
    in_check = 0;
@@ -95,7 +95,15 @@ void Game::debugToggle()
    {
       debug = 1;
       update.setDebug(1);
+      shallow_blue.setDebug(1);
    }
+}
+
+/*!
+ */
+void Game::setMode(int m)
+{
+   mode = m;
 }
 
 /*!
@@ -123,8 +131,12 @@ int Game::validate(char *c)
    int x=0, y=0;	// coordinates holders
    int ambiguous = 0;	// ambiguous counter
 
+   /* Call on Blue to create a move */
+   if(mode == 0)
+     translated_move = shallow_blue.decide(game_board, &the_pieces);
    /* Translate the c_string to a Move class object */
-   translated_move = update.translateMove(turn,c);
+   else
+      translated_move = update.translateMove(turn,c);
 
    /* Check for input error */
    if(translated_move == 0)
@@ -393,7 +405,6 @@ int Game::validate(char *c)
        ***************/
       else if(translated_move->getPromotion() == 1)
       {
-	cout << "PROMOTE THAT SHIT" << endl;
 	if(translated_move->getPlayer() == 0)		/* white's turn */
  	{
 	   /* not in correct row or spot is not empty */
@@ -1122,8 +1133,6 @@ int Game::validate(char *c)
          /* check for queen's existence */
          if(cardinalSearch(Queen, 0, pos[0], pos[1]) == 1)
          {
-		if(debug)
-		   cout << "Queen Found" << endl;
            if(translated_move->getCapture() == 0 && game_board[pos[0]][pos[1]] == -1 && 
 	      moveSafe(0,cords[0],cords[1],pos[0],pos[1]) == 0)
            {
@@ -1176,9 +1185,8 @@ int Game::validate(char *c)
        {
          /* check for queen's existence */
          if(cardinalSearch(Queen, 1, pos[0], pos[1]) == 1)
-         {
-cout << 1 << endl;
-           if(translated_move->getCapture() == 0 && game_board[pos[0]][pos[1]] == -1 && 
+         {         
+	   if(translated_move->getCapture() == 0 && game_board[pos[0]][pos[1]] == -1 && 
 	      moveSafe(1,cords[0],cords[1],pos[0],pos[1]) == 0)
            {  
 		/* valid queen move */
@@ -1194,10 +1202,8 @@ cout << 1 << endl;
                 turn++;							// increment turn
                 return 1;						// return valid 
            }
-cout << 2 << endl;
            return 0; /* invalid move catch */
          }
-cout << 3 << endl;
        }
      }  
    } /* end queen */
@@ -1255,6 +1261,7 @@ cout << 3 << endl;
                 the_pieces.getPiece(game_board[pos[0]][pos[1]])->setAlive(false);		// set captured dead
                 game_board[pos[0]][pos[1]] = 31;     						// update board 
                 game_board[x][y] = -1;
+		turn++;
                 return 1;
 	   }
 	   
@@ -1266,6 +1273,7 @@ cout << 3 << endl;
 	   	the_pieces.getPiece(31)->setPos(pos[0],pos[1]);		// set king's new pos
 		game_board[pos[0]][pos[1]] = 31;			// update board
 		game_board[x][y] = -1;
+		turn++;
 		return 1;
 	   }     
 	}	
@@ -1319,6 +1327,7 @@ cout << 3 << endl;
                 the_pieces.getPiece(game_board[pos[0]][pos[1]])->setAlive(false);		// set captured dead
                 game_board[pos[0]][pos[1]] = 15;                                                // update board 
                 game_board[x][y] = -1;
+		turn++;
                 return 1;
            }
 
@@ -1330,6 +1339,7 @@ cout << 3 << endl;
 	   	the_pieces.getPiece(15)->setPos(pos[0],pos[1]);		// update king's pos
 		game_board[pos[0]][pos[1]] = 15;			// update board
 		game_board[x][y] = -1;	
+		turn++;
 		return 1;
 	   }
 
@@ -1369,35 +1379,35 @@ int Game::kingSafe(int mode, int turn, int x_offset, int y_offset)
           y = the_pieces.getPiece(31)->getPos()[1];
 
 	  // north
-          if( y-1 >= 0 && kingSafe(1,0,0,-1) == 0  && kingAround(0, x, y-1) == 0 &&
+          if( y-1 >= 0 && moveSafe(0,x,y,x,y-1) == 0  && kingAround(0, x, y-1) == 0 &&
               game_board[x][y-1] < 15 || game_board[x][y-1] == -1 )
           	return 0;
           // northeast
-          else if( x+1 < 8 && y-1 >= 0 && kingSafe(1,0,1,-1) == 0 && kingAround(0, x+1, y-1) == 0 &&
+          else if( x+1 < 8 && y-1 >= 0 && moveSafe(0,x,y,x+1,y-1) == 0 && kingAround(0, x+1, y-1) == 0 &&
                    game_board[x+1][y-1] < 15 || game_board[x+1][y-1] == -1 )
           	return 0;
           // east
-          else if( x+1 < 8 && kingSafe(1,0,1,0) == 0 && kingAround(0, x+1, y) == 0 &&
+          else if( x+1 < 8 && moveSafe(0,x,y,x+1,y) == 0 && kingAround(0, x+1, y) == 0 &&
                    game_board[x+1][y] < 15 || game_board[x+1][y] == -1 )
           	return 0;
           // southeast
-          else if( x-1 >= 0 && y+1 < 8 && kingSafe(1,0,-1,1) == 0 && kingAround(0, x-1, y+1) == 0 &&
+          else if( x-1 >= 0 && y+1 < 8 && moveSafe(0,x,y,x-1,y+1) == 0 && kingAround(0, x-1, y+1) == 0 &&
                    game_board[x-1][y+1] < 15 || game_board[x-1][y+1] == -1 )
        		return 0;
           // south
-          else if( y+1 < 8 && kingSafe(1,0,0,1) == 0 && kingAround(0, x, y+1) == 0 &&
+          else if( y+1 < 8 && moveSafe(0,x,y,x,y+1) == 0 && kingAround(0, x, y+1) == 0 &&
                    game_board[x][y+1] < 15 || game_board[x][y+1] == -1 )
           	return 0;
           // southwest
-  	  else if( x-1 >= 0 && y+1 < 8 && kingSafe(1,0,-1,1) == 0 && kingAround(0, x-1, y+1) == 0 &&
+  	  else if( x-1 >= 0 && y+1 < 8 && moveSafe(0,x,y,x-1,y+1) == 0 && kingAround(0, x-1, y+1) == 0 &&
                    game_board[x-1][y+1] < 15 || game_board[x-1][y+1] == -1 )
           	return 0;
           // west
-          else if( x-1 >= 0 && kingSafe(1,0,-1,0) == 0 && kingAround(0, x-1, y) == 0 &&
+          else if( x-1 >= 0 && moveSafe(0,x,y,x-1,y) == 0 && kingAround(0, x-1, y) == 0 &&
                    game_board[x-1][y] < 15 || game_board[x-1][y] == -1 )
           	return 0;
           // northwest
-          else if( x-1 >= 0 && y-1 >= 0 && kingSafe(1,0,-1,-1) == 0 && kingAround(0, x-1, y-1) == 0 &&
+          else if( x-1 >= 0 && y-1 >= 0 && moveSafe(0,x,y,x-1,y-1) == 0 && kingAround(0, x-1, y-1) == 0 &&
                    game_board[x-1][y-1] < 15 || game_board[x-1][y-1] == -1 )
           	return 0;
           /**
@@ -1423,39 +1433,39 @@ int Game::kingSafe(int mode, int turn, int x_offset, int y_offset)
              cout << "black king in check" << endl;
 
 	  /* search for a free space that would not put king into check */
-          x = the_pieces.getPiece(31)->getPos()[0];
-          y = the_pieces.getPiece(31)->getPos()[1];
+          x = the_pieces.getPiece(31)->getPos()[0] + x_offset;
+          y = the_pieces.getPiece(31)->getPos()[1] + y_offset;
 
           // north
-          if( y-1 >= 0 && kingSafe(1,0,0,-1) == 0  && kingAround(0, x, y-1) == 0 &&
+          if( y-1 >= 0 && moveSafe(1,x,y,x,y-1) == 0  && kingAround(0, x, y-1) == 0 &&
               game_board[x][y-1] < 15 || game_board[x][y-1] == -1 )
                 return 0;
           // northeast
-          else if( x+1 < 8 && y-1 >= 0 && kingSafe(1,0,1,-1) == 0 && kingAround(0, x+1, y-1) == 0 &&
+          else if( x+1 < 8 && y-1 >= 0 && moveSafe(1,x,y,x+1,y-1) == 0 && kingAround(0, x+1, y-1) == 0 &&
                    game_board[x+1][y-1] < 15 || game_board[x+1][y-1] == -1 )
                 return 0;
           // east
-          else if( x+1 < 8 && kingSafe(1,0,1,0) == 0 && kingAround(0, x+1, y) == 0 &&
+          else if( x+1 < 8 && moveSafe(1,x,y,x+1,y) == 0 && kingAround(0, x+1, y) == 0 &&
                    game_board[x+1][y] < 15 || game_board[x+1][y] == -1 )
                 return 0;
           // southeast
-          else if( x-1 >= 0 && y+1 < 8 && kingSafe(1,0,-1,1) == 0 && kingAround(0, x-1, y+1) == 0 &&
+          else if( x-1 >= 0 && y+1 < 8 && moveSafe(1,x,y,x-1,y+1) == 0 && kingAround(0, x-1, y+1) == 0 &&
                    game_board[x-1][y+1] < 15 || game_board[x-1][y+1] == -1 )
                 return 0;
           // south
-          else if( y+1 < 8 && kingSafe(1,0,0,1) == 0 && kingAround(0, x, y+1) == 0 &&
+          else if( y+1 < 8 && moveSafe(1,x,y,x,y+1) == 0 && kingAround(0, x, y+1) == 0 &&
                    game_board[x][y+1] < 15 || game_board[x][y+1] == -1 )
                 return 0;
           // southwest
-          else if( x-1 >= 0 && y+1 < 8 && kingSafe(1,0,-1,1) == 0 && kingAround(0, x-1, y+1) == 0 &&
+          else if( x-1 >= 0 && y+1 < 8 && moveSafe(1,x,y,x-1,y+1) == 0 && kingAround(0, x-1, y+1) == 0 &&
                    game_board[x-1][y+1] < 15 || game_board[x-1][y+1] == -1 )
                 return 0;
           // west
-          else if( x-1 >= 0 && kingSafe(1,0,-1,0) == 0 && kingAround(0, x-1, y) == 0 &&
+          else if( x-1 >= 0 && moveSafe(1,x,y,x-1,y) == 0 && kingAround(0, x-1, y) == 0 &&
                    game_board[x-1][y] < 15 || game_board[x-1][y] == -1 )
                 return 0;
           // northwest
-          else if( x-1 >= 0 && y-1 >= 0 && kingSafe(1,0,-1,-1) == 0 && kingAround(0, x-1, y-1) == 0 &&
+          else if( x-1 >= 0 && y-1 >= 0 && moveSafe(1,x,y,x-1,y-1) == 0 && kingAround(0, x-1, y-1) == 0 &&
                    game_board[x-1][y-1] < 15 || game_board[x-1][y-1] == -1 )
                 return 0;
 	  /**
@@ -1483,7 +1493,10 @@ int Game::kingSafe(int mode, int turn, int x_offset, int y_offset)
         in_check = 0;
         x = the_pieces.getPiece(31)->getPos()[0] + x_offset;
         y = the_pieces.getPiece(31)->getPos()[1] + y_offset;
-  
+ 
+/* TODO 
+         check to see if moving any of the below pieces places king in check TODO 
+*/ 
         if( cardinalSearch(Queen, 1, x, y) != 0 || 
             cardinalSearch(Bishop, 1, x, y) != 0 ||
             cardinalSearch(Rook, 1, x, y) != 0 ||
@@ -1524,7 +1537,7 @@ int Game::kingSafe(int mode, int turn, int x_offset, int y_offset)
      {
         x = the_pieces.getPiece(15)->getPos()[0] + x_offset;
         y = the_pieces.getPiece(15)->getPos()[1] + y_offset;
-        
+
         if( cardinalSearch(Queen, 0, x, y) != 0 ||
             cardinalSearch(Bishop, 0, x, y) != 0 ||
             cardinalSearch(Rook, 0, x, y) != 0 ||
@@ -1571,11 +1584,8 @@ int Game::kingSafe(int mode, int turn, int x_offset, int y_offset)
 int Game::moveSafe(int turn, int x1, int y1, int x2, int y2)
 {
    int temp_board[8][8];		// saved copy of game_board whilst I mess with it
-   int x, y;				// king's x,y
    int valid;				// int to be returned if valid move or not
 
-   if(debug)
-     cout << "! " << x1 << " " << y1 << " " << x2 << " " << y2 << endl;
    /* save game_board */
    for(int gY = 0; gY < 8; gY++) 
    {
@@ -1583,27 +1593,51 @@ int Game::moveSafe(int turn, int x1, int y1, int x2, int y2)
         temp_board[gX][gY] = game_board[gX][gY];
    }   
 
-
    /* assume the move from x1,y1 -> x2,y2 is made */
    game_board[x2][y2] = game_board[x1][y1];
    game_board[x1][y1] = -1;
-    
-   /* check to see if the king is now in check */
+   
    if(turn == 0)			/* White's Turn */
    {
-      /* make sure not now in check */
-      if( kingSafe(1,0,0,0) == 1 )
-	 valid = 1;
-      else
-         valid = 0;
+     /* check to see if king was moved, if so use offsets*/
+     if(game_board[x2][y2] == 31)
+     {
+cout << "king move" << endl;
+       /* make sure not now in check */
+       if( kingSafe(1,0,x2-x1,y2-y1) == 1 )
+       	  valid = 1;
+       else
+          valid = 0;
+     }
+     else	/* no offsets */
+     { 
+       /* make sure not now in check */
+       if( kingSafe(1,0,0,0) == 1 )
+	  valid = 1;
+       else
+	  valid = 0;	
+     }
    }
    else					/* Black's Turn */
    {
-      /* make sure not now in check */
-      if( kingSafe(1,1,0,0) == 1 )
-         valid = 1;
-      else
-         valid = 0;
+     /* check to see if king was moved, if so use offsets */
+     if(game_board[x2][y2] == 15)
+     {
+cout << "king move" << x2-x1 << "!" << y2-y1 << endl;
+       /* make sure not now in check */
+       if( kingSafe(1,1,x2-x1,y2-y1) == 1 )
+          valid = 1;
+       else
+          valid = 0;
+     }
+     else	/* no offsets */
+     {
+       /* make sure not now in check */
+       if( kingSafe(1,1,0,0) == 1 )
+          valid = 1;
+       else
+	  valid = 0;
+     }
    }   
 
    /* reset game board */
@@ -1847,6 +1881,7 @@ int Game::cardinalSearch(Piece_enum p, int t, int x, int y)
         {
           if(t == 0 && p == Queen && game_board[e][y] == 30)
           {
+cout << "queen found" << endl;
              cords[0] = e;
              cords[1] = y;
              return 1;
@@ -2237,8 +2272,25 @@ void Game::recordMove(int p, char *move)
  */
 void Game::kingCheck(int turn)
 {
-  if(turn == 0)
-    kingSafe(0,0,0,0);
-  else
-    kingSafe(0,1,0,0);
+  /* Human vs Blue */
+  if(mode == 0)
+  {
+     if(turn == 0)
+       kingSafe(0,0,0,0);
+     else
+     {
+       if(kingSafe(0,1,0,0) == 1)
+         shallow_blue.setCheck(1);
+       else 
+	 shallow_blue.setCheck(0);
+     }
+  }
+  /* Human vs. Human */
+  else if(mode == 1)
+  {
+     if(turn == 0)
+       kingSafe(0,0,0,0);
+     else
+       kingSafe(0,1,0,0);
+  }
 }
