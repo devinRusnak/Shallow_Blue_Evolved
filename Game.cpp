@@ -95,7 +95,7 @@ void Game::debugToggle()
    {
       debug = 1;
       update.setDebug(1);
-      shallow_blue.setDebug(1);
+//      shallow_blue.getBrain()->setDebug(1);
    }
 }
 
@@ -132,12 +132,12 @@ int Game::validate(char *c)
    int ambiguous = 0;	// ambiguous counter
 
    /* Call on Blue to create a move */
-   if(mode == 0)
-     translated_move = shallow_blue.decide(game_board, &the_pieces);
+   if(mode == 0 && turn == 1)
+     ;//translated_move = shallow_blue.decide(game_board, &the_pieces);
    /* Translate the c_string to a Move class object */
-   else
+   else if( mode == 1 || (mode == 0 && turn == 0) )
       translated_move = update.translateMove(turn,c);
-
+   shallow_blue.thinkItOver(game_board);
    /* Check for input error */
    if(translated_move == 0)
    {
@@ -2280,9 +2280,9 @@ void Game::kingCheck(int turn)
      else
      {
        if(kingSafe(0,1,0,0) == 1)
-         shallow_blue.setCheck(1);
+         shallow_blue.getBrain().setCheck(1);
        else 
-	 shallow_blue.setCheck(0);
+	 shallow_blue.getBrain().setCheck(0);
      }
   }
   /* Human vs. Human */

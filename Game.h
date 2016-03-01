@@ -9,6 +9,7 @@
 #include "Updater.h"
 #include "Move.h"
 #include "Blue.h"
+#include "BlueMind.h"
 using namespace std;
 
 class Game
@@ -52,7 +53,7 @@ private:
    Pieces the_pieces;		// the chess pieces
    Updater update;		// game logic
    Move *translated_move;	// filled out move object to check for validity
-   Blue shallow_blue;		// AI Controller
+   BlueMind shallow_blue;	// ai controller
 
    // private class functions
    void initBoard();
